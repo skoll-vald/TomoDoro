@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
-import { View, Text, Button } from 'react-native';
+import React, {useState} from 'react';
+import {View, Text, Button} from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-const averageLifeExpectancy = 73; // Average life expectancy in years
+const averageLifeExpectancyYears = 73; // Average life expectancy in years
+const weeksInYear = 52; // Number of weeks in a year
 
 const App: React.FC = () => {
   const [birthDate, setBirthDate] = useState<Date | null>(null);
-  const [remainingYears, setRemainingYears] = useState<number>(0);
+  const [remainingWeeks, setRemainingWeeks] = useState<number>(0);
   const [isDatePickerVisible, setDatePickerVisibility] = useState<boolean>(false);
+  const [weeksLived, setWeeksLived] = useState<number>(0);
 
   const showDatePicker = () => {
     setDatePickerVisibility(true);
@@ -22,18 +24,20 @@ const App: React.FC = () => {
     hideDatePicker();
   };
 
-  const calculateRemainingYears = () => {
+  const calculateRemainingWeeks = () => {
     if (birthDate) {
-      const birthYear = birthDate.getFullYear();
-      const currentYear = new Date().getFullYear();
-      const age = currentYear - birthYear;
-      const yearsRemaining = Math.max(0, averageLifeExpectancy - age);
-      setRemainingYears(yearsRemaining);
+      const currentDate = new Date();
+      const ageInMilliseconds = currentDate.getTime() - birthDate.getTime();
+      const ageInYears = ageInMilliseconds / (1000 * 60 * 60 * 24 * 365.25);
+      const yearsRemaining = Math.max(0, averageLifeExpectancyYears - ageInYears);
+      const weeksRemaining = Math.floor(yearsRemaining * weeksInYear);
+      setRemainingWeeks(weeksRemaining);
+      setWeeksLived(Math.floor(ageInYears * weeksInYear));
     }
   };
 
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+    <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
       <Button title="Pick Birth Date" onPress={showDatePicker} />
 
       {isDatePickerVisible && (
@@ -51,15 +55,30 @@ const App: React.FC = () => {
           : 'No birth date selected'}
       </Text>
 
-      <Button
-        title="Calculate Remaining Years"
-        onPress={calculateRemainingYears}
-      />
+      <Button title="Calculate Weeks" onPress={calculateRemainingWeeks} />
 
-      {remainingYears > 0 && (
-        <Text>
-          You have approximately {remainingYears} years left to live on average.
-        </Text>
+      {remainingWeeks > 0 && (
+        <View style={{marginTop: 20}}>
+          <Text>Total weeks of life: {weeksLived + remainingWeeks}</Text>
+          <Text>Weeks lived: {weeksLived}</Text>
+          <Text>Weeks left to live: {remainingWeeks}</Text>
+          <View style={{flexDirection: 'row', marginTop: 10}}>
+            <View
+              style={{
+                width: `${(weeksLived / (weeksLived + remainingWeeks)) * 100}%`,
+                height: 10,
+                backgroundColor: 'green',
+              }}
+            />
+            <View
+              style={{
+                width: `${(remainingWeeks / (weeksLived + remainingWeeks)) * 100}%`,
+                height: 10,
+                backgroundColor: 'lightgray',
+              }}
+            />
+          </View>
+        </View>
       )}
     </View>
   );
