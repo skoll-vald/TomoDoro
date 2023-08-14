@@ -31,6 +31,10 @@ const App: React.FC = () => {
     setDotSize(adjustedDotSize);
   }, [screenWidth]);
 
+  useEffect(() => {
+    calculateRemainingWeeks(); // Calculate automatically when the user selects a date
+  });
+
   const showDatePicker = () => {
     setDatePickerVisibility(true);
   };
@@ -42,7 +46,6 @@ const App: React.FC = () => {
   const handleConfirm = (date: Date) => {
     setBirthDate(date);
     hideDatePicker();
-    calculateRemainingWeeks(); // Calculate automatically when the user selects a date
   };
 
   const calculateRemainingWeeks = () => {
@@ -58,6 +61,12 @@ const App: React.FC = () => {
       setRemainingWeeks(weeksRemaining);
       setWeeksLived(Math.floor(ageInYears * weeksInYear));
     }
+  };
+
+  const calculateDeathDate = (birthDate: Date): Date => {
+    const deathDate = new Date(birthDate);
+    deathDate.setDate(deathDate.getDate() + 52 * 74 * 7);
+    return deathDate;
   };
 
   const styles = StyleSheet.create({
@@ -139,11 +148,18 @@ const App: React.FC = () => {
         />
       )}
 
-      <Text>
-        {birthDate
-          ? `Selected Birth Date: ${birthDate.toISOString().substr(0, 10)}`
-          : 'No birth date selected'}
-      </Text>
+      {birthDate && (
+        <Text>
+          Selected Birth Date: {birthDate.toISOString().substr(0, 10)}
+        </Text>
+      )}
+
+      {birthDate && (
+        <Text>
+          Death Date:{' '}
+          {calculateDeathDate(birthDate)?.toISOString().substr(0, 10)}
+        </Text>
+      )}
 
       {remainingWeeks > 0 && (
         <ScrollView
