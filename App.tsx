@@ -7,6 +7,7 @@ import {
   Dimensions,
   StyleSheet,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 const averageLifeExpectancyYears = 74.02; // Average life expectancy in years
@@ -43,10 +44,22 @@ const App: React.FC = () => {
     setDatePickerVisibility(false);
   };
 
-  const handleConfirm = (date: Date) => {
+  const handleConfirm = async (date: Date) => {
     setBirthDate(date);
     hideDatePicker();
+    await AsyncStorage.setItem('birthDate', date.toISOString()); // Save the birth date
+    calculateRemainingWeeks(); // Calculate automatically when the user selects a date
   };
+
+  useEffect(() => {
+    const retrieveBirthDate = async () => {
+      const storedBirthDate = await AsyncStorage.getItem('birthDate');
+      if (storedBirthDate) {
+        setBirthDate(new Date(storedBirthDate));
+      }
+    };
+    retrieveBirthDate();
+  }, []);
 
   const calculateRemainingWeeks = () => {
     if (birthDate) {
@@ -121,7 +134,7 @@ const App: React.FC = () => {
                     hasMargin && styles.dotWithMargin, // Apply margin conditionally
                     {
                       backgroundColor:
-                        dotIndex < weeksLived ? 'green' : 'lightgray',
+                        dotIndex < weeksLived ? 'black' : 'lightgray',
                     },
                   ]}
                 />
