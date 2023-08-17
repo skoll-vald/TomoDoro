@@ -1,7 +1,13 @@
 apply plugin: "com.android.application"
 apply plugin: "com.facebook.react"
+<<<<<<< HEAD
 apply plugin: "com.google.gms.google-services"
 apply plugin: "com.google.firebase.firebase-perf"
+=======
+apply plugin: 'com.google.gms.google-services' // <- Add this line
+apply plugin: 'com.google.firebase.firebase-perf' // <- Add this line
+
+>>>>>>> 144b081966420850212b7a1949e71432663c050a
 
 /**
  * This is the configuration block to customize your React Native Android app.
@@ -108,10 +114,18 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
+<<<<<<< HEAD
     implementation platform('com.google.firebase:firebase-bom:32.2.2')
     implementation 'com.firebaseui:firebase-ui-auth:7.2.0'
     implementation 'com.google.firebase:firebase-analytics'
     implementation ("com.google.firebase:firebase-perf")
+=======
+    implementation (platform('com.google.firebase:firebase-bom:32.2.2'))
+    implementation 'com.google.firebase:firebase-analytics-ktx'
+    // Add the dependency for the Performance Monitoring library
+    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-perf-ktx")
+>>>>>>> 144b081966420850212b7a1949e71432663c050a
 
     debugImplementation("com.facebook.flipper:flipper:${FLIPPER_VERSION}")
     debugImplementation("com.facebook.flipper:flipper-network-plugin:${FLIPPER_VERSION}") {
