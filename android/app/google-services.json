@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "416099688028",
+    "project_id": "tomodoro-10718",
+    "storage_bucket": "tomodoro-10718.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:416099688028:android:fd783441b2d3f97c0e5099",
+        "android_client_info": {
+          "package_name": "com.tomodoro"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "416099688028-l49h0gp9jkf4d8db1ig610n9p89uau7b.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.tomodoro",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "416099688028-oi0evtbmlr0jeofe546qbrheh01nphjm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD_FA_voa5i-_7PjCmlfG-IORs93HgbfZQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "416099688028-ird6vbnn96escu82vhjes8a2hegsb8ic.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
