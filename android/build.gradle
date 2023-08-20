@@ -17,12 +17,7 @@ buildscript {
     dependencies {
         classpath("com.android.tools.build:gradle")
         classpath("com.facebook.react:react-native-gradle-plugin")
-<<<<<<< HEAD
         classpath("com.google.gms:google-services:4.3.15")
         classpath("com.google.firebase:perf-plugin:1.4.2")
-=======
-        classpath 'com.google.gms:google-services:4.3.15'
-        classpath 'com.google.firebase:perf-plugin:1.4.2'
->>>>>>> 144b081966420850212b7a1949e71432663c050a
     }
 }
