@@ -7,13 +7,15 @@ import {
   Dimensions,
   StyleSheet,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
+import firestore from '@react-native-firebase/firestore';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import auth from '@react-native-firebase/auth';
 
 const averageLifeExpectancyYears = 74.02; // Average life expectancy in years
 const weeksInYear = 52; // Number of weeks in a year
 
 const Memento = () => {
+  console.log('Memento component rendered'); // Add this line
   const [birthDate, setBirthDate] = useState<Date | null>(null);
   const [remainingWeeks, setRemainingWeeks] = useState<number>(0);
   const [isDatePickerVisible, setDatePickerVisibility] =
@@ -47,15 +49,35 @@ const Memento = () => {
   const handleConfirm = async (date: Date) => {
     setBirthDate(date);
     hideDatePicker();
-    await AsyncStorage.setItem('birthDate', date.toISOString()); // Save the birth date
-    calculateRemainingWeeks(); // Calculate automatically when the user selects a date
+
+    const currentUser = auth().currentUser; // Get the current user
+    if (currentUser) {
+      const userDocRef = firestore().collection('users').doc(currentUser.uid); // Reference to the user's document
+      try {
+        await userDocRef.set({birthDate: date.toISOString()}); // Save the birth date in the user's document
+        calculateRemainingWeeks(); // Calculate automatically when the user selects a date
+      } catch (error) {
+        console.error('Error saving birth date to Firestore:', error);
+      }
+    }
   };
 
   useEffect(() => {
     const retrieveBirthDate = async () => {
-      const storedBirthDate = await AsyncStorage.getItem('birthDate');
-      if (storedBirthDate) {
-        setBirthDate(new Date(storedBirthDate));
+      const currentUser = auth().currentUser; // Get the current user
+      if (currentUser) {
+        const userDocRef = firestore().collection('users').doc(currentUser.uid); // Reference to the user's document
+        try {
+          const userDocSnapshot = await userDocRef.get();
+          if (userDocSnapshot.exists) {
+            const birthDate = userDocSnapshot.data()?.birthDate;
+            if (birthDate) {
+              setBirthDate(new Date(birthDate));
+            }
+          }
+        } catch (error) {
+          console.error('Error retrieving birth date from Firestore:', error);
+        }
       }
     };
     retrieveBirthDate();
