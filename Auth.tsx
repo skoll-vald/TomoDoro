@@ -1,7 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import auth from '@react-native-firebase/auth';
 import FirebaseAuthTypes from '@react-native-firebase/app';
-import Memento from './Memento';
+import Prolist from './Prolist';
 import {
   GoogleSignin,
   GoogleSigninButton,
@@ -66,7 +66,7 @@ function GoogleSignIn() {
 
   return (
     <>
-      <Memento />
+      <Prolist />
       <Button
         title="Sign Out"
         onPress={() =>
