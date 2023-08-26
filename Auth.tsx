@@ -1,13 +1,8 @@
 import React, {useState, useEffect} from 'react';
 import auth from '@react-native-firebase/auth';
-import FirebaseAuthTypes from '@react-native-firebase/app';
-import Prolist from './Prolist';
-import {
-  GoogleSignin,
-  GoogleSigninButton,
-  statusCodes,
-} from '@react-native-community/google-signin';
-import {Button, Text, View} from 'react-native'; // Import only the necessary component
+import TaskList from './TaskList';
+import {GoogleSignin} from '@react-native-community/google-signin';
+import {Button} from 'react-native'; // Import only the necessary component
 
 function GoogleSignIn() {
   const [initializing, setInitializing] = useState(true);
@@ -66,7 +61,7 @@ function GoogleSignIn() {
 
   return (
     <>
-      <Prolist />
+      <TaskList />
       <Button
         title="Sign Out"
         onPress={() =>
