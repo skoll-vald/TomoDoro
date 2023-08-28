@@ -10,6 +10,7 @@ import {useNavigation} from '@react-navigation/native';
 import {RootStackParamList} from './NavigationTypes';
 import firestore from '@react-native-firebase/firestore'; // Import Firebase Firestore module
 import auth from '@react-native-firebase/auth';
+import {Swipeable} from 'react-native-gesture-handler';
 
 interface Task {
   id: string;
@@ -41,7 +42,6 @@ const ProjList: React.FC = () => {
     }
   };
 
-
   useEffect(() => {
     fetchTasks();
   }, []);
@@ -68,10 +68,23 @@ const ProjList: React.FC = () => {
     }
   };
 
-  const toggleCompleted = (index: number) => {
-    const updatedTasks = [...tasks];
-    updatedTasks[index].completed = !updatedTasks[index].completed;
-    setTasks(updatedTasks);
+  const toggleCompleted = async (taskId: string, completed: boolean) => {
+    try {
+      const currentUser = auth().currentUser;
+      if (currentUser) {
+        await firestore()
+          .collection('users')
+          .doc(currentUser.uid)
+          .collection('tasks')
+          .doc(taskId)
+          .update({
+            completed: completed,
+          });
+        fetchTasks(); // Fetch the updated tasks for the user
+      }
+    } catch (error) {
+      console.error('Error updating task:', error);
+    }
   };
 
   const navigateToProjIn = (projectText: string) => {
@@ -83,9 +96,10 @@ const ProjList: React.FC = () => {
       <ScrollView>
         {tasks.map((task, index) => (
           <View
-            key={index}
+            key={task.id}
             style={{flexDirection: 'row', alignItems: 'center', marginTop: 10}}>
-            <TouchableOpacity onPress={() => toggleCompleted(index)}>
+            <TouchableOpacity
+              onPress={() => toggleCompleted(task.id, !task.completed)}>
               <Text>{task.completed ? '☑' : '☐'}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={{flex: 1}}>
