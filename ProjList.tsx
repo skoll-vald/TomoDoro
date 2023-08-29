@@ -10,7 +10,6 @@ import {useNavigation} from '@react-navigation/native';
 import {RootStackParamList} from './NavigationTypes';
 import firestore from '@react-native-firebase/firestore'; // Import Firebase Firestore module
 import auth from '@react-native-firebase/auth';
-import {Swipeable} from 'react-native-gesture-handler';
 
 interface Task {
   id: string;
@@ -31,6 +30,7 @@ const ProjList: React.FC = () => {
         .collection('users')
         .doc(currentUser.uid)
         .collection('tasks')
+        .orderBy('createdAt', 'desc') // Order by creation time in descending order
         .get();
 
       const tasksData = tasksSnapshot.docs.map(doc => ({
@@ -58,6 +58,7 @@ const ProjList: React.FC = () => {
             .add({
               text: newTask,
               completed: false,
+              createdAt: firestore.FieldValue.serverTimestamp(), // Set createdAt field
             });
           fetchTasks(); // Fetch the updated tasks for the user
           setNewTask('');
