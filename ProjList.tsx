@@ -41,6 +41,13 @@ const ProjList: React.FC = () => {
     fetchTasks();
   }, []);
 
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchTasks(); // Fetch tasks when the screen comes into focus
+    });
+    return unsubscribe;
+  }, [navigation]);
+
   const addTask = async () => {
     const currentUser = auth().currentUser;
     if (currentUser) {
@@ -83,8 +90,12 @@ const ProjList: React.FC = () => {
     }
   };
 
-  const navigateToProjIn = (projectText: string) => {
-    navigation.navigate('ProjIn', {projectText});
+  const navigateToProjIn = (taskId: string, projectText: string) => {
+    navigation.navigate('ProjIn', {
+      taskId: taskId,
+      projectText: projectText,
+    });
+    console.log(taskId, projectText);
   };
 
   const deleteTask = async (taskId: string) => {
@@ -122,14 +133,14 @@ const ProjList: React.FC = () => {
     const renderLeftActions = () => (
       <TouchableOpacity
         style={{
-          backgroundColor: 'green',
+          backgroundColor: 'red',
           justifyContent: 'center',
           alignItems: 'flex-end',
           height: '100%',
           padding: 10,
         }}
-        onPress={() => console.log('Left action')}>
-        <Text style={{color: 'white'}}>Complete</Text>
+        onPress={() => deleteTask(task.id)}>
+        <Text style={{color: 'white'}}>Delete</Text>
       </TouchableOpacity>
     );
 
@@ -156,7 +167,7 @@ const ProjList: React.FC = () => {
               flex: 1,
               paddingLeft: 10,
             }}
-            onPress={() => navigateToProjIn(task.text)}>
+            onPress={() => navigateToProjIn(task.id, task.text)}>
             <Text
               style={{
                 textDecorationLine: task.completed ? 'line-through' : 'none',
