@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {View, TextInput, Button} from 'react-native';
+import {View, TextInput, Button, Text} from 'react-native';
 import {RouteProp, useNavigation} from '@react-navigation/native';
 import {RootStackParamList} from './NavigationTypes';
 import firestore from '@react-native-firebase/firestore';
@@ -13,9 +13,37 @@ interface ProjInScreenProps {
 }
 
 const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
-  const { taskId, projectText } = route.params;
+  const {taskId, projectText} = route.params;
   const navigation = useNavigation();
   const [updatedText, setUpdatedText] = useState(projectText); // State to hold the updated text
+  const [isDatePickerVisible, setDatePickerVisible] = useState(false);
+  const [deadline, setDeadline] = useState(null); // State to hold the deadline date and time
+
+  // Fetch the deadline from Firestore when the component mounts
+  useEffect(() => {
+    const fetchDeadline = async () => {
+      try {
+        const currentUser = auth().currentUser;
+        if (currentUser) {
+          const doc = await firestore()
+            .collection('users')
+            .doc(currentUser.uid)
+            .collection('tasks')
+            .doc(taskId) // Replace taskId with the actual task ID
+            .get();
+
+          const taskData = doc.data();
+          if (taskData && taskData.deadline) {
+            setDeadline(taskData.deadline.toDate()); // Convert Firestore timestamp to JavaScript Date
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching deadline:', error);
+      }
+    };
+
+    fetchDeadline();
+  }, [taskId]); // Fetch the deadline when taskId changes
 
   const updateTextInFirestore = async () => {
     try {
@@ -29,12 +57,37 @@ const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
           .update({
             text: updatedText, // Update the text field in Firestore
           });
-
-        // Navigate back to the previous screen
-        navigation.goBack();
       }
     } catch (error) {
       console.error('Error updating task text:', error, taskId);
+    }
+  };
+
+  const showDatePicker = () => {
+    setDatePickerVisible(true);
+  };
+
+  const hideDatePicker = () => {
+    setDatePickerVisible(false);
+  };
+
+  const handleConfirm = async date => {
+    setDeadline(date); // Update the deadline state with the selected date
+    hideDatePicker();
+    try {
+      const currentUser = auth().currentUser;
+      if (currentUser) {
+        await firestore()
+          .collection('users')
+          .doc(currentUser.uid)
+          .collection('tasks')
+          .doc(taskId) // Replace taskId with the actual task ID
+          .update({
+            deadline: date.toISOString(), // Update the 'deadline' field in Firestore with ISO string
+          });
+      }
+    } catch (error) {
+      console.error('Error updating task deadline:', error);
     }
   };
 
@@ -48,9 +101,22 @@ const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
           padding: 5,
         }}
         value={updatedText}
-        onChangeText={text => setUpdatedText(text)} // Update the state with the new text
+        onChangeText={text => setUpdatedText(text)}
+        onSubmitEditing={updateTextInFirestore}
       />
-      <Button title="Update Text" onPress={updateTextInFirestore} />
+      <Text
+        style={{color: 'blue'}}
+        onPress={() => {
+          showDatePicker();
+        }}>
+        {deadline ? `Deadline: ${deadline.toLocaleString()}` : 'Add deadline'}
+      </Text>
+      <DateTimePickerModal
+        isVisible={isDatePickerVisible}
+        mode="datetime"
+        onConfirm={handleConfirm}
+        onCancel={hideDatePicker}
+      />
     </View>
   );
 };
