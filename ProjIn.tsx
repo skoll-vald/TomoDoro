@@ -31,10 +31,11 @@ const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
             .collection('tasks')
             .doc(taskId) // Replace taskId with the actual task ID
             .get();
-
           const taskData = doc.data();
           if (taskData && taskData.deadline) {
-            setDeadline(taskData.deadline.toDate()); // Convert Firestore timestamp to JavaScript Date
+            // Parse the string-based deadline from Firestore into a Date object
+            const deadlineDate = new Date(taskData.deadline);
+            setDeadline(deadlineDate);
           }
         }
       } catch (error) {
@@ -43,7 +44,7 @@ const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
     };
 
     fetchDeadline();
-  }, [taskId]); // Fetch the deadline when taskId changes
+  }, [deadline, taskId]);
 
   const updateTextInFirestore = async () => {
     try {
@@ -109,7 +110,11 @@ const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
         onPress={() => {
           showDatePicker();
         }}>
-        {deadline ? `Deadline: ${deadline.toLocaleString()}` : 'Add deadline'}
+        {deadline
+          ? `Deadline: ${new Date(deadline).toLocaleDateString()} ${new Date(
+              deadline,
+            ).toLocaleTimeString()}`
+          : 'Add deadline'}
       </Text>
       <DateTimePickerModal
         isVisible={isDatePickerVisible}
