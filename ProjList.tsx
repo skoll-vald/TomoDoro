@@ -152,7 +152,7 @@ const ProjList: React.FC = () => {
         overshootLeft={false}>
         <View
           style={{
-            backgroundColor: task.completed ? 'gray' : 'white',
+            backgroundColor: 'white',
             flexDirection: 'row',
             alignItems: 'center',
             paddingTop: 10,
@@ -160,7 +160,12 @@ const ProjList: React.FC = () => {
           }}>
           <TouchableOpacity
             onPress={() => toggleCompleted(task.id, !task.completed)}>
-            <Text>{task.completed ? '☑' : '☐'}</Text>
+            <Text
+              style={{
+                color: task.completed ? 'green' : 'gray',
+              }}>
+              {task.completed ? '☑' : '☐'}
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={{
@@ -170,6 +175,7 @@ const ProjList: React.FC = () => {
             onPress={() => navigateToProjIn(task.id, task.text)}>
             <Text
               style={{
+                color: task.completed ? 'gray' : 'black',
                 textDecorationLine: task.completed ? 'line-through' : 'none',
               }}>
               {task.text}
@@ -195,8 +201,11 @@ const ProjList: React.FC = () => {
           marginTop: 10,
         }}>
         <TextInput
-          style={{flex: 1}}
+          style={{
+            flex: 1,
+          }}
           placeholder="Add a task"
+          placeholderTextColor="gray"
           value={newTask}
           onChangeText={setNewTask}
           onSubmitEditing={addTask}

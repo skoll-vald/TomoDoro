@@ -96,6 +96,7 @@ const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
     <View style={{flex: 1, padding: 20}}>
       <TextInput
         style={{
+          color: 'black',
           borderBottomWidth: 1,
           marginBottom: 20,
           fontSize: 16,
