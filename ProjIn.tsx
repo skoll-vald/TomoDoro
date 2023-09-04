@@ -20,9 +20,8 @@ const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
   const [deadline, setDeadline] = useState(null); // State to hold the deadline date and time
   const [description, setDescription] = useState('');
 
-  // Fetch the deadline from Firestore when the component mounts
   useEffect(() => {
-    const fetchDescription = async () => {
+    const fetchTaskData = async () => {
       try {
         const currentUser = auth().currentUser;
         if (currentUser) {
@@ -33,60 +32,22 @@ const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
             .doc(taskId)
             .get();
           const taskData = doc.data();
-          if (taskData && taskData.description) {
-            setDescription(taskData.description);
+          if (taskData) {
+            if (taskData.deadline) {
+              const deadlineDate = new Date(taskData.deadline);
+              setDeadline(deadlineDate);
+            }
+            if (taskData.description) {
+              setDescription(taskData.description);
+            }
           }
         }
       } catch (error) {
-        console.error('Error fetching description:', error);
+        console.error('Error fetching task data:', error);
       }
     };
-    fetchDescription();
-  }, [taskId]);
-
-  useEffect(() => {
-    const fetchDeadline = async () => {
-      try {
-        const currentUser = auth().currentUser;
-        if (currentUser) {
-          const doc = await firestore()
-            .collection('users')
-            .doc(currentUser.uid)
-            .collection('tasks')
-            .doc(taskId) // Replace taskId with the actual task ID
-            .get();
-          const taskData = doc.data();
-          if (taskData && taskData.deadline) {
-            // Parse the string-based deadline from Firestore into a Date object
-            const deadlineDate = new Date(taskData.deadline);
-            setDeadline(deadlineDate);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching deadline:', error);
-      }
-    };
-
-    fetchDeadline();
-  }, [deadline, taskId]);
-
-  const updateTextInFirestore = async () => {
-    try {
-      const currentUser = auth().currentUser;
-      if (currentUser) {
-        await firestore()
-          .collection('users')
-          .doc(currentUser.uid)
-          .collection('tasks')
-          .doc(taskId) // Replace taskId with the actual task ID
-          .update({
-            text: updatedText, // Update the text field in Firestore
-          });
-      }
-    } catch (error) {
-      console.error('Error updating task text:', error, taskId);
-    }
-  };
+    fetchTaskData();
+  }, []);
 
   const showDatePicker = () => {
     setDatePickerVisible(true);
@@ -96,9 +57,7 @@ const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
     setDatePickerVisible(false);
   };
 
-  const updateDlInFirestore = async date => {
-    setDeadline(date); // Update the deadline state with the selected date
-    hideDatePicker();
+  const updateFieldInFirestore = async (fieldName: string, value: any) => {
     try {
       const currentUser = auth().currentUser;
       if (currentUser) {
@@ -108,30 +67,31 @@ const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
           .collection('tasks')
           .doc(taskId) // Replace taskId with the actual task ID
           .update({
-            deadline: date.toISOString(), // Update the 'deadline' field in Firestore with ISO string
+            [fieldName]: value,
           });
       }
     } catch (error) {
-      console.error('Error updating task deadline:', error);
+      console.error(`Error updating task ${fieldName}:`, error);
     }
   };
 
-  const updateDescriptionInFirestore = async () => {
-    try {
-      const currentUser = auth().currentUser;
-      if (currentUser) {
-        await firestore()
-          .collection('users')
-          .doc(currentUser.uid)
-          .collection('tasks')
-          .doc(taskId)
-          .update({
-            description: description,
-          });
-      }
-    } catch (error) {
-      console.error('Error updating task description:', error);
-    }
+  // Update text field
+  const updateTextInFirestore = async (text: string) => {
+    setUpdatedText(text);
+    await updateFieldInFirestore('text', text);
+    console.log(text); // Log the updated text
+  };
+
+  // Update deadline field
+  const updateDlInFirestore = async (date: Date) => {
+    setDeadline(date);
+    await updateFieldInFirestore('deadline', date.toISOString());
+  };
+
+  // Update description field
+  const updateDescriptionInFirestore = async (text: string) => {
+    setDescription(text);
+    await updateFieldInFirestore('description', text);
   };
 
   return (
@@ -154,8 +114,9 @@ const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
           padding: 5,
         }}
         value={updatedText}
-        onChangeText={text => setUpdatedText(text)}
-        onSubmitEditing={updateTextInFirestore}
+        onChangeText={text => {
+          updateTextInFirestore(text);
+        }}
       />
       <Text
         style={{
@@ -203,11 +164,12 @@ const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
           padding: 5,
         }}
         value={description}
-        onChangeText={text => setDescription(text)}
+        onChangeText={text => {
+          updateDescriptionInFirestore(text);
+        }}
         placeholder="Add description"
         multiline={true} // Enable multiline
         numberOfLines={4} // Adjust the number of lines as needed
-        onBlur={updateDescriptionInFirestore} // Update description when focus is lost
       />
     </View>
   );
