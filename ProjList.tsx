@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {View, Text, TextInput, ScrollView} from 'react-native';
+import {View, Text, TextInput, ScrollView, Alert} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {RootStackParamList} from './NavigationTypes';
 import firestore from '@react-native-firebase/firestore'; // Import Firebase Firestore module
@@ -100,16 +100,34 @@ const ProjList: React.FC = () => {
 
   const deleteTask = async (taskId: string) => {
     try {
-      const currentUser = auth().currentUser;
-      if (currentUser) {
-        await firestore()
-          .collection('users')
-          .doc(currentUser.uid)
-          .collection('tasks')
-          .doc(taskId)
-          .delete();
-        fetchTasks(); // Fetch the updated tasks for the user
-      }
+      // Show a confirmation popup before deleting the task
+      Alert.alert(
+        'Think slow, decide fast',
+        'Are you really-really pretty-pretty sure you want to delete this task?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'Delete',
+            onPress: async () => {
+              const currentUser = auth().currentUser;
+              if (currentUser) {
+                await firestore()
+                  .collection('users')
+                  .doc(currentUser.uid)
+                  .collection('tasks')
+                  .doc(taskId)
+                  .delete();
+                fetchTasks(); // Fetch the updated tasks for the user
+              }
+            },
+            style: 'destructive',
+          },
+        ],
+        {cancelable: true},
+      );
     } catch (error) {
       console.error('Error deleting task:', error);
     }
@@ -157,6 +175,8 @@ const ProjList: React.FC = () => {
             alignItems: 'center',
             paddingTop: 10,
             padding: 10,
+            borderBottomWidth: 1,
+            borderBlockColor: 'lightgray',
           }}>
           <TouchableOpacity
             onPress={() => toggleCompleted(task.id, !task.completed)}>
@@ -175,8 +195,10 @@ const ProjList: React.FC = () => {
             onPress={() => navigateToProjIn(task.id, task.text)}>
             <Text
               style={{
-                color: task.completed ? 'gray' : 'black',
+                color: task.completed ? 'lightgray' : 'black',
                 textDecorationLine: task.completed ? 'line-through' : 'none',
+                paddingRight: 10,
+                fontWeight: 'bold',
               }}>
               {task.text}
             </Text>

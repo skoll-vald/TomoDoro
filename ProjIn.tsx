@@ -52,7 +52,8 @@ const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
 
       PushNotification.localNotificationSchedule({
         channelId: 'channel-id',
-        message: 'Your task deadline is approaching!',
+        title: `${projectText}`,
+        message: `Deadline is approaching at ${deadline.toLocaleDateString()} in ${deadline.toLocaleTimeString()}!`,
         date: notificationDate,
       });
     }
