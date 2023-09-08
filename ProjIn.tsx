@@ -1,14 +1,23 @@
 import React, {useEffect, useState} from 'react';
-import {View, TextInput, Button, Text, Switch} from 'react-native';
-import {RouteProp, useNavigation} from '@react-navigation/native';
-import {RootStackParamList} from './NavigationTypes';
+import {View, TextInput, Button, Text} from 'react-native';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import {LocalNotification} from './android/app/src/services/LocalPushController';
-import PushNotification from 'react-native-push-notification';
-type ProjInScreenRouteProp = RouteProp<RootStackParamList, 'ProjIn'>;
 import {Picker} from '@react-native-picker/picker';
+import scheduleNotification from './scheduleNotification';
+
+type ProjInScreenRouteProp = Readonly<{
+  key: string;
+  name: 'ProjIn';
+  path?: string | undefined;
+}> &
+  Readonly<{
+    params: Readonly<{
+      projectText: string;
+      taskId?: string; // Make taskId optional
+    }>;
+  }>;
 
 interface ProjInScreenProps {
   route: ProjInScreenRouteProp;
@@ -16,47 +25,20 @@ interface ProjInScreenProps {
 
 const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
   const {taskId, projectText} = route.params;
-  const navigation = useNavigation();
   const [updatedText, setUpdatedText] = useState(projectText); // State to hold the updated text
   const [isDatePickerVisible, setDatePickerVisible] = useState(false);
-  const [deadline, setDeadline] = useState(null); // State to hold the deadline date and time
+  const [deadline, setDeadline] = useState<Date | null>(null);
   const [description, setDescription] = useState('');
   const [notificationTime, setNotificationTime] = useState('1_hour');
 
-  const handleNotificationTimeChange = value => {
+  const handleNotificationTimeChange = (
+    value: React.SetStateAction<string>,
+  ) => {
     setNotificationTime(value);
   };
 
   const handleButtonPress = () => {
     LocalNotification();
-  };
-
-  const timeIntervals = {
-    dont_remind: 0,
-    '1_hour': 1,
-    '2_hours': 2,
-    '1_day': 24, // 1 day is 24 hours
-    '2_days': 48, // 2 days is 48 hours
-    '1_week': 168, // 1 week is 7 days * 24 hours/day = 168 hours
-  };
-
-  const scheduleNotification = (deadline: Date, notificationTime: string) => {
-    console.log('scheduleNotification called with:', deadline, notificationTime);
-    const notificationDate = new Date(deadline);
-    const hoursBeforeDeadline = timeIntervals[notificationTime];
-
-    if (hoursBeforeDeadline) {
-      notificationDate.setHours(
-        notificationDate.getHours() - hoursBeforeDeadline,
-      );
-
-      PushNotification.localNotificationSchedule({
-        channelId: 'channel-id',
-        title: `${projectText}`,
-        message: `Deadline is approaching at ${deadline.toLocaleDateString()} in ${deadline.toLocaleTimeString()}!`,
-        date: notificationDate,
-      });
-    }
   };
 
   useEffect(() => {
@@ -86,7 +68,7 @@ const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
       }
     };
     fetchTaskData();
-  }, []);
+  });
 
   const showDatePicker = () => {
     setDatePickerVisible(true);
@@ -123,15 +105,17 @@ const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
 
   // Update deadline field
   const updateDlInFirestore = async (date: Date) => {
-    scheduleNotification(date, notificationTime);
+    scheduleNotification(date, notificationTime, projectText);
     setDeadline(date);
     await updateFieldInFirestore('deadline', date.toISOString());
+    console.log(date);
   };
 
   // Update description field
   const updateDescriptionInFirestore = async (text: string) => {
     setDescription(text);
     await updateFieldInFirestore('description', text);
+    console.log(projectText); // Log the updated text
   };
 
   return (
@@ -217,7 +201,7 @@ const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
         onValueChange={itemValue => {
           setNotificationTime(itemValue);
           handleNotificationTimeChange(itemValue);
-          scheduleNotification(deadline, itemValue);
+          scheduleNotification(deadline, itemValue, projectText);
         }}>
         <Picker.Item label="Don't remind" value="dont_remind" />
         <Picker.Item label="1 Hour Before" value="1_hour" />

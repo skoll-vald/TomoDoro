@@ -1,10 +1,19 @@
 import React, {useEffect, useState} from 'react';
 import {View, Text, TextInput, ScrollView, Alert} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import {RootStackParamList} from './NavigationTypes';
+import {NavigationProp} from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore'; // Import Firebase Firestore module
 import auth from '@react-native-firebase/auth';
 import {Swipeable, TouchableOpacity} from 'react-native-gesture-handler';
+
+type RootStackParamList = {
+  Home: undefined;
+  ProjList: undefined;
+  ProjIn: {
+    taskId: string;
+    projectText: string;
+  };
+};
 
 interface Task {
   id: string;
@@ -13,7 +22,7 @@ interface Task {
 }
 
 const ProjList: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState('');
 
