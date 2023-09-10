@@ -15,7 +15,7 @@ type ProjInScreenRouteProp = Readonly<{
   Readonly<{
     params: Readonly<{
       projectText: string;
-      taskId?: string; // Make taskId optional
+      projectId?: string; // Make projectId optional
     }>;
   }>;
 
@@ -24,7 +24,7 @@ interface ProjInScreenProps {
 }
 
 const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
-  const {taskId, projectText} = route.params;
+  const {projectId, projectText} = route.params;
   const [updatedText, setUpdatedText] = useState(projectText); // State to hold the updated text
   const [isDatePickerVisible, setDatePickerVisible] = useState(false);
   const [deadline, setDeadline] = useState<Date | null>(null);
@@ -42,32 +42,32 @@ const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
   };
 
   useEffect(() => {
-    const fetchTaskData = async () => {
+    const fetchProjectData = async () => {
       try {
         const currentUser = auth().currentUser;
         if (currentUser) {
           const doc = await firestore()
             .collection('users')
             .doc(currentUser.uid)
-            .collection('tasks')
-            .doc(taskId)
+            .collection('projects')
+            .doc(projectId)
             .get();
-          const taskData = doc.data();
-          if (taskData) {
-            if (taskData.deadline) {
-              const deadlineDate = new Date(taskData.deadline);
+          const projectData = doc.data();
+          if (projectData) {
+            if (projectData.deadline) {
+              const deadlineDate = new Date(projectData.deadline);
               setDeadline(deadlineDate);
             }
-            if (taskData.description) {
-              setDescription(taskData.description);
+            if (projectData.description) {
+              setDescription(projectData.description);
             }
           }
         }
       } catch (error) {
-        console.error('Error fetching task data:', error);
+        console.error('Error fetching project data:', error);
       }
     };
-    fetchTaskData();
+    fetchProjectData();
   });
 
   const showDatePicker = () => {
@@ -85,14 +85,14 @@ const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
         await firestore()
           .collection('users')
           .doc(currentUser.uid)
-          .collection('tasks')
-          .doc(taskId) // Replace taskId with the actual task ID
+          .collection('projects')
+          .doc(projectId) // Replace projectId with the actual project ID
           .update({
             [fieldName]: value,
           });
       }
     } catch (error) {
-      console.error(`Error updating task ${fieldName}:`, error);
+      console.error(`Error updating project ${fieldName}:`, error);
     }
   };
 

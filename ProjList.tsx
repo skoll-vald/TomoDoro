@@ -10,12 +10,12 @@ type RootStackParamList = {
   Home: undefined;
   ProjList: undefined;
   ProjIn: {
-    taskId: string;
+    projectId: string;
     projectText: string;
   };
 };
 
-interface Task {
+interface Project {
   id: string;
   text: string;
   completed: boolean;
@@ -23,96 +23,96 @@ interface Task {
 
 const ProjList: React.FC = () => {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [newTask, setNewTask] = useState('');
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [newProject, setNewProject] = useState('');
 
-  // Fetch tasks from Firestore
-  const fetchTasks = async () => {
+  // Fetch Projects from Firestore
+  const fetchProjects = async () => {
     const currentUser = auth().currentUser;
     if (currentUser) {
-      const tasksSnapshot = await firestore()
+      const projectsSnapshot = await firestore()
         .collection('users')
         .doc(currentUser.uid)
-        .collection('tasks')
+        .collection('projects')
         .orderBy('createdAt', 'desc') // Order by creation time in descending order
         .get();
 
-      const tasksData = tasksSnapshot.docs.map(doc => ({
+      const projectsData = projectsSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
       }));
 
-      setTasks(tasksData as Task[]);
+      setProjects(projectsData as Project[]);
     }
   };
 
   useEffect(() => {
-    fetchTasks();
+    fetchProjects();
   }, []);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      fetchTasks(); // Fetch tasks when the screen comes into focus
+      fetchProjects(); // Fetch Projects when the screen comes into focus
     });
     return unsubscribe;
   }, [navigation]);
 
-  const addTask = async () => {
+  const addProject = async () => {
     const currentUser = auth().currentUser;
     if (currentUser) {
       try {
-        if (newTask.trim() !== '') {
+        if (newProject.trim() !== '') {
           await firestore()
             .collection('users')
             .doc(currentUser.uid)
-            .collection('tasks')
+            .collection('projects')
             .add({
-              text: newTask,
+              text: newProject,
               completed: false,
               createdAt: firestore.FieldValue.serverTimestamp(), // Set createdAt field
             });
-          fetchTasks(); // Fetch the updated tasks for the user
-          setNewTask('');
+          fetchProjects(); // Fetch the updated Projects for the user
+          setNewProject('');
         }
       } catch (error) {
-        console.error('Error adding task:', error);
+        console.error('Error adding project:', error);
       }
     }
   };
 
-  const toggleCompleted = async (taskId: string, completed: boolean) => {
+  const toggleCompleted = async (projectId: string, completed: boolean) => {
     try {
       const currentUser = auth().currentUser;
       if (currentUser) {
         await firestore()
           .collection('users')
           .doc(currentUser.uid)
-          .collection('tasks')
-          .doc(taskId)
+          .collection('projects')
+          .doc(projectId)
           .update({
             completed: completed,
           });
-        fetchTasks(); // Fetch the updated tasks for the user
+        fetchProjects(); // Fetch the updated Projects for the user
       }
     } catch (error) {
-      console.error('Error updating task:', error);
+      console.error('Error updating Project:', error);
     }
   };
 
-  const navigateToProjIn = (taskId: string, projectText: string) => {
+  const navigateToProjIn = (projectId: string, projectText: string) => {
     navigation.navigate('ProjIn', {
-      taskId: taskId,
+      projectId: projectId,
       projectText: projectText,
     });
-    console.log(taskId, projectText);
+    console.log(projectId, projectText);
   };
 
-  const deleteTask = async (taskId: string) => {
+  const deleteProject = async (projectId: string) => {
     try {
-      // Show a confirmation popup before deleting the task
+      // Show a confirmation popup before deleting the project
       Alert.alert(
         'Think slow, decide fast',
-        'Are you really-really pretty-pretty sure you want to delete this task?',
+        'Are you really-really pretty-pretty sure you want to delete this project?',
         [
           {
             text: 'Cancel',
@@ -126,10 +126,10 @@ const ProjList: React.FC = () => {
                 await firestore()
                   .collection('users')
                   .doc(currentUser.uid)
-                  .collection('tasks')
-                  .doc(taskId)
+                  .collection('projects')
+                  .doc(projectId)
                   .delete();
-                fetchTasks(); // Fetch the updated tasks for the user
+                fetchProjects(); // Fetch the updated Projects for the user
               }
             },
             style: 'destructive',
@@ -138,11 +138,11 @@ const ProjList: React.FC = () => {
         {cancelable: true},
       );
     } catch (error) {
-      console.error('Error deleting task:', error);
+      console.error('Error deleting Project:', error);
     }
   };
 
-  const renderSwipeableRow = (task: Task) => {
+  const renderSwipeableRow = (project: Project) => {
     const renderRightActions = () => (
       <TouchableOpacity
         style={{
@@ -152,7 +152,7 @@ const ProjList: React.FC = () => {
           height: '100%',
           padding: 10,
         }}
-        onPress={() => deleteTask(task.id)}>
+        onPress={() => deleteProject(project.id)}>
         <Text style={{color: 'white'}}>Delete</Text>
       </TouchableOpacity>
     );
@@ -166,62 +166,67 @@ const ProjList: React.FC = () => {
           height: '100%',
           padding: 10,
         }}
-        onPress={() => deleteTask(task.id)}>
+        onPress={() => deleteProject(project.id)}>
         <Text style={{color: 'white'}}>Delete</Text>
       </TouchableOpacity>
     );
 
     return (
-      <Swipeable
-        renderRightActions={renderRightActions}
-        renderLeftActions={renderLeftActions}
-        overshootRight={false}
-        overshootLeft={false}>
-        <View
-          style={{
-            backgroundColor: 'white',
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingTop: 10,
-            padding: 10,
-            borderBottomWidth: 1,
-            borderBlockColor: 'lightgray',
-          }}>
-          <TouchableOpacity
-            onPress={() => toggleCompleted(task.id, !task.completed)}>
-            <Text
-              style={{
-                color: task.completed ? 'green' : 'gray',
-              }}>
-              {task.completed ? '☑' : '☐'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+      <TouchableOpacity
+        onPress={() => navigateToProjIn(project.id, project.text)}>
+        <Swipeable
+          renderRightActions={renderRightActions}
+          renderLeftActions={renderLeftActions}
+          overshootRight={false}
+          overshootLeft={false}>
+          <View
             style={{
-              flex: 1,
-              paddingLeft: 10,
-            }}
-            onPress={() => navigateToProjIn(task.id, task.text)}>
-            <Text
+              backgroundColor: 'white',
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingTop: 10,
+              padding: 10,
+              borderBottomWidth: 1,
+              borderBlockColor: 'lightgray',
+            }}>
+            <TouchableOpacity
+              onPress={() => toggleCompleted(project.id, !project.completed)}>
+              <Text
+                style={{
+                  color: project.completed ? 'green' : 'gray',
+                }}>
+                {project.completed ? '☑' : '☐'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
               style={{
-                color: task.completed ? 'lightgray' : 'black',
-                textDecorationLine: task.completed ? 'line-through' : 'none',
-                paddingRight: 10,
-                fontWeight: 'bold',
-              }}>
-              {task.text}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </Swipeable>
+                flex: 1,
+                paddingLeft: 10,
+              }}
+              onPress={() => navigateToProjIn(project.id, project.text)}>
+              <Text
+                style={{
+                  color: project.completed ? 'lightgray' : 'black',
+                  textDecorationLine: project.completed
+                    ? 'line-through'
+                    : 'none',
+                  paddingRight: 10,
+                  fontWeight: 'bold',
+                }}>
+                {project.text}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </Swipeable>
+      </TouchableOpacity>
     );
   };
 
   return (
     <View style={{flex: 1, padding: 20}}>
       <ScrollView>
-        {tasks.map(task => (
-          <View key={task.id}>{renderSwipeableRow(task)}</View>
+        {projects.map(project => (
+          <View key={project.id}>{renderSwipeableRow(project)}</View>
         ))}
       </ScrollView>
       <View
@@ -235,11 +240,11 @@ const ProjList: React.FC = () => {
           style={{
             flex: 1,
           }}
-          placeholder="Add a task"
+          placeholder="Add a project"
           placeholderTextColor="gray"
-          value={newTask}
-          onChangeText={setNewTask}
-          onSubmitEditing={addTask}
+          value={newProject}
+          onChangeText={setNewProject}
+          onSubmitEditing={addProject}
         />
       </View>
     </View>
