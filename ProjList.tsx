@@ -4,7 +4,10 @@ import {useNavigation} from '@react-navigation/native';
 import {NavigationProp} from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore'; // Import Firebase Firestore module
 import auth from '@react-native-firebase/auth';
-import {Swipeable, TouchableOpacity} from 'react-native-gesture-handler';
+import ListItem from './ListItem'; // Import the ListItem component
+import {toggleCompletionStatus, ItemType} from './toggleCompletionStatus';
+import {deleteItem} from './deleteItem';
+import {showConfirmationAlert} from './AlertService';
 
 type RootStackParamList = {
   Home: undefined;
@@ -82,20 +85,10 @@ const ProjList: React.FC = () => {
 
   const toggleCompleted = async (projectId: string, completed: boolean) => {
     try {
-      const currentUser = auth().currentUser;
-      if (currentUser) {
-        await firestore()
-          .collection('users')
-          .doc(currentUser.uid)
-          .collection('projects')
-          .doc(projectId)
-          .update({
-            completed: completed,
-          });
-        fetchProjects(); // Fetch the updated Projects for the user
-      }
+      await toggleCompletionStatus(projectId, ItemType.Project, completed);
+      fetchProjects(); // Fetch the updated projects for the user
     } catch (error) {
-      console.error('Error updating Project:', error);
+      console.error('Error toggling project completion:', error);
     }
   };
 
@@ -110,123 +103,33 @@ const ProjList: React.FC = () => {
   const deleteProject = async (projectId: string) => {
     try {
       // Show a confirmation popup before deleting the project
-      Alert.alert(
-        'Think slow, decide fast',
-        'Are you really-really pretty-pretty sure you want to delete this project?',
-        [
-          {
-            text: 'Cancel',
-            style: 'cancel',
-          },
-          {
-            text: 'Delete',
-            onPress: async () => {
-              const currentUser = auth().currentUser;
-              if (currentUser) {
-                await firestore()
-                  .collection('users')
-                  .doc(currentUser.uid)
-                  .collection('projects')
-                  .doc(projectId)
-                  .delete();
-                fetchProjects(); // Fetch the updated Projects for the user
-              }
-            },
-            style: 'destructive',
-          },
-        ],
-        {cancelable: true},
-      );
+      const title = 'Delete Project';
+      const message = 'Are you sure you want to delete this project?';
+  
+      // Show the confirmation alert
+      showConfirmationAlert(title, message, async () => {
+        await deleteItem(projectId, ItemType.Project);
+        fetchProjects(); // Fetch the updated Projects for the user
+      });
     } catch (error) {
       console.error('Error deleting Project:', error);
     }
-  };
-
-  const renderSwipeableRow = (project: Project) => {
-    const renderRightActions = () => (
-      <TouchableOpacity
-        style={{
-          backgroundColor: 'red',
-          justifyContent: 'center',
-          alignItems: 'flex-start',
-          height: '100%',
-          padding: 10,
-        }}
-        onPress={() => deleteProject(project.id)}>
-        <Text style={{color: 'white'}}>Delete</Text>
-      </TouchableOpacity>
-    );
-
-    const renderLeftActions = () => (
-      <TouchableOpacity
-        style={{
-          backgroundColor: 'red',
-          justifyContent: 'center',
-          alignItems: 'flex-end',
-          height: '100%',
-          padding: 10,
-        }}
-        onPress={() => deleteProject(project.id)}>
-        <Text style={{color: 'white'}}>Delete</Text>
-      </TouchableOpacity>
-    );
-
-    return (
-      <TouchableOpacity
-        onPress={() => navigateToProjIn(project.id, project.text)}>
-        <Swipeable
-          renderRightActions={renderRightActions}
-          renderLeftActions={renderLeftActions}
-          overshootRight={false}
-          overshootLeft={false}>
-          <View
-            style={{
-              backgroundColor: 'white',
-              flexDirection: 'row',
-              alignItems: 'center',
-              paddingTop: 10,
-              padding: 10,
-              borderBottomWidth: 1,
-              borderBlockColor: 'lightgray',
-            }}>
-            <TouchableOpacity
-              onPress={() => toggleCompleted(project.id, !project.completed)}>
-              <Text
-                style={{
-                  color: project.completed ? 'green' : 'gray',
-                }}>
-                {project.completed ? '☑' : '☐'}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={{
-                flex: 1,
-                paddingLeft: 10,
-              }}
-              onPress={() => navigateToProjIn(project.id, project.text)}>
-              <Text
-                style={{
-                  color: project.completed ? 'lightgray' : 'black',
-                  textDecorationLine: project.completed
-                    ? 'line-through'
-                    : 'none',
-                  paddingRight: 10,
-                  fontWeight: 'bold',
-                }}>
-                {project.text}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </Swipeable>
-      </TouchableOpacity>
-    );
   };
 
   return (
     <View style={{flex: 1, padding: 20}}>
       <ScrollView>
         {projects.map(project => (
-          <View key={project.id}>{renderSwipeableRow(project)}</View>
+          <ListItem
+            key={project.id}
+            text={project.text}
+            completed={project.completed}
+            onDelete={() => deleteProject(project.id)}
+            onPress={() => navigateToProjIn(project.id, project.text)}
+            onComplete={(completed: boolean) =>
+              toggleCompleted(project.id, completed)
+            }
+          />
         ))}
       </ScrollView>
       <View
