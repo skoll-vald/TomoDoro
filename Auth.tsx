@@ -1,7 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import auth from '@react-native-firebase/auth';
 import ProjList from './ProjList';
-import {GoogleSignin} from '@react-native-community/google-signin';
+import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import {Button} from 'react-native'; // Import only the necessary component
 
 function GoogleSignIn() {

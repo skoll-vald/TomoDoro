@@ -8,10 +8,10 @@ import {Swipeable, TouchableOpacity} from 'react-native-gesture-handler';
 
 type RootStackParamList = {
   Home: undefined;
-  ProjList: undefined;
-  ProjIn: {
-    projectId: string;
-    projectText: string;
+  TaskList: undefined;
+  TaskIn: {
+    taskId: string;
+    taskText: string;
   };
 };
 

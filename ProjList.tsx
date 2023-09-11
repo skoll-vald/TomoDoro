@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {View, Text, TextInput, ScrollView, Alert} from 'react-native';
+import {View, TextInput, ScrollView} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {NavigationProp} from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore'; // Import Firebase Firestore module
@@ -8,6 +8,7 @@ import ListItem from './ListItem'; // Import the ListItem component
 import {toggleCompletionStatus, ItemType} from './toggleCompletionStatus';
 import {deleteItem} from './deleteItem';
 import {showConfirmationAlert} from './AlertService';
+import {addItemToCollection, CollectionType} from './addItemToCollection';
 
 type RootStackParamList = {
   Home: undefined;
@@ -28,10 +29,10 @@ const ProjList: React.FC = () => {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [projects, setProjects] = useState<Project[]>([]);
   const [newProject, setNewProject] = useState('');
+  const currentUser = auth().currentUser;
 
   // Fetch Projects from Firestore
   const fetchProjects = async () => {
-    const currentUser = auth().currentUser;
     if (currentUser) {
       const projectsSnapshot = await firestore()
         .collection('users')
@@ -60,29 +61,6 @@ const ProjList: React.FC = () => {
     return unsubscribe;
   }, [navigation]);
 
-  const addProject = async () => {
-    const currentUser = auth().currentUser;
-    if (currentUser) {
-      try {
-        if (newProject.trim() !== '') {
-          await firestore()
-            .collection('users')
-            .doc(currentUser.uid)
-            .collection('projects')
-            .add({
-              text: newProject,
-              completed: false,
-              createdAt: firestore.FieldValue.serverTimestamp(), // Set createdAt field
-            });
-          fetchProjects(); // Fetch the updated Projects for the user
-          setNewProject('');
-        }
-      } catch (error) {
-        console.error('Error adding project:', error);
-      }
-    }
-  };
-
   const toggleCompleted = async (projectId: string, completed: boolean) => {
     try {
       await toggleCompletionStatus(projectId, ItemType.Project, completed);
@@ -100,12 +78,34 @@ const ProjList: React.FC = () => {
     console.log(projectId, projectText);
   };
 
+  const addProject = async () => {
+    try {
+      if (newProject.trim() !== '') {
+        const newProjectData = {
+          text: newProject,
+          completed: false,
+          // Add other properties as needed
+        };
+        await addItemToCollection(
+          currentUser.uid,
+          CollectionType.Projects,
+          null,
+          newProjectData,
+        );
+        fetchProjects(); // Fetch the updated Projects for the user
+        setNewProject('');
+      }
+    } catch (error) {
+      console.error('Error adding project:', error);
+    }
+  };
+
   const deleteProject = async (projectId: string) => {
     try {
       // Show a confirmation popup before deleting the project
       const title = 'Delete Project';
       const message = 'Are you sure you want to delete this project?';
-  
+
       // Show the confirmation alert
       showConfirmationAlert(title, message, async () => {
         await deleteItem(projectId, ItemType.Project);
@@ -146,7 +146,9 @@ const ProjList: React.FC = () => {
           placeholder="Add a project"
           placeholderTextColor="gray"
           value={newProject}
-          onChangeText={setNewProject}
+          onChangeText={text => {
+            setNewProject(text);
+          }}
           onSubmitEditing={addProject}
         />
       </View>
