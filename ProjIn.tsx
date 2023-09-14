@@ -6,6 +6,7 @@ import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import {LocalNotification} from './android/app/src/services/LocalPushController';
 import {Picker} from '@react-native-picker/picker';
 import scheduleNotification from './scheduleNotification';
+import TaskList from './TaskList';
 
 type ProjInScreenRouteProp = Readonly<{
   key: string;
@@ -210,6 +211,7 @@ const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
         <Picker.Item label="2 Days Before" value="2_days" />
         <Picker.Item label="1 Week Before" value="1_week" />
       </Picker>
+      <TaskList projectId={projectId} />
     </View>
   );
 };

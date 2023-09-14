@@ -8,35 +8,34 @@ export enum CollectionType {
   // Add other collection types as needed
 }
 
-interface ItemData {
-  id: string;
+export interface ItemData {
   text: string;
   completed: boolean;
-  // Add other properties as needed
 }
 
 export const addItemToCollection = async (
-  userId: FirebaseAuthTypes.User,
   collectionType: CollectionType,
-  parentId: string | null,
   itemData: ItemData,
+  parentId: string | null,
 ) => {
   try {
+    const currentUser = auth().currentUser; // Move this line here to ensure currentUser is defined
+
     let collectionRef;
 
     if (parentId) {
       // If parentId is provided, we assume it's a subcollection
       collectionRef = firestore()
         .collection('users')
-        .doc(userId)
-        .collection(collectionType)
+        .doc(currentUser.uid)
+        .collection(CollectionType.Projects) // Remove this line
         .doc(parentId)
         .collection(collectionType);
     } else {
       // Otherwise, it's a top-level collection
       collectionRef = firestore()
         .collection('users')
-        .doc(userId)
+        .doc(currentUser.uid)
         .collection(collectionType);
     }
 

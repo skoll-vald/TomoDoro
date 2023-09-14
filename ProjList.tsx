@@ -9,6 +9,7 @@ import {toggleCompletionStatus, ItemType} from './toggleCompletionStatus';
 import {deleteItem} from './deleteItem';
 import {showConfirmationAlert} from './AlertService';
 import {addItemToCollection, CollectionType} from './addItemToCollection';
+import {fetchCollectionData} from './fetchCollectionData';
 
 type RootStackParamList = {
   Home: undefined;
@@ -33,20 +34,11 @@ const ProjList: React.FC = () => {
 
   // Fetch Projects from Firestore
   const fetchProjects = async () => {
-    if (currentUser) {
-      const projectsSnapshot = await firestore()
-        .collection('users')
-        .doc(currentUser.uid)
-        .collection('projects')
-        .orderBy('createdAt', 'desc') // Order by creation time in descending order
-        .get();
-
-      const projectsData = projectsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-
+    try {
+      const projectsData = await fetchCollectionData(CollectionType.Projects);
       setProjects(projectsData as Project[]);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
     }
   };
 
@@ -84,13 +76,11 @@ const ProjList: React.FC = () => {
         const newProjectData = {
           text: newProject,
           completed: false,
-          // Add other properties as needed
         };
         await addItemToCollection(
-          currentUser.uid,
-          CollectionType.Projects,
-          null,
-          newProjectData,
+          CollectionType.Projects, // Collection type
+          newProjectData, // Item data
+          null, // Parent ID (null for top-level collection)
         );
         fetchProjects(); // Fetch the updated Projects for the user
         setNewProject('');
