@@ -7,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
+  Platform,
 } from 'react-native';
 import ListItem from './ListItem'; // Import the ListItem component
 import {toggleCompletionStatus, ItemType} from './toggleCompletionStatus';
@@ -75,12 +76,19 @@ const TaskList: React.FC<TaskListProps> = ({projectId}) => {
   };
 
   // Delete a task
-  const onDeleteTask = async (taskId: string) => {
+  const deleteTask = async (taskId: string) => {
     try {
-      await deleteItem(taskId, ItemType.Task);
-      fetchTasks(); // Fetch the updated list of tasks
+      // Show a confirmation popup before deleting the task
+      const title = 'Delete Project';
+      const message = 'Are you sure you want to delete this project?';
+
+      // Show the confirmation alert
+      showConfirmationAlert(title, message, async () => {
+        await deleteItem(taskId, ItemType.Task, projectId);
+        fetchTasks(); // Fetch the updated Tasks for the user
+      });
     } catch (error) {
-      console.error('Error deleting task:', error);
+      console.error('Error deleting Project:', error);
     }
   };
 
@@ -91,6 +99,10 @@ const TaskList: React.FC<TaskListProps> = ({projectId}) => {
   return (
     <View>
       <TextInput
+        style={{
+          borderBottomWidth: 1,
+          marginTop: 10,
+        }}
         placeholder="Add a task"
         value={newTask}
         onChangeText={setNewTask}
@@ -102,7 +114,7 @@ const TaskList: React.FC<TaskListProps> = ({projectId}) => {
             key={task.id}
             text={task.text}
             completed={task.completed}
-            onDelete={() => onDeleteTask(task.id)}
+            onDelete={() => deleteTask(task.id)}
             onPress={() => editTask(task.id)}
             onComplete={completed => toggleTaskCompleted(task.id, completed)}
           />
