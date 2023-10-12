@@ -6,30 +6,32 @@ import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import {LocalNotification} from './android/app/src/services/LocalPushController';
 import {Picker} from '@react-native-picker/picker';
 import scheduleNotification from './scheduleNotification';
+import TaskList from './TaskList';
 
-type ProjInScreenRouteProp = Readonly<{
+type TaskInScreenRouteProp = Readonly<{
   key: string;
-  name: 'ProjIn';
+  name: 'TaskIn';
   path?: string | undefined;
 }> &
   Readonly<{
     params: Readonly<{
-      projectText: string;
-      projectId?: string; // Make projectId optional
+      taskText: string;
+      taskId?: string; // Make taskId optional
     }>;
   }>;
 
-interface ProjInScreenProps {
-  route: ProjInScreenRouteProp;
+interface TaskInScreenProps {
+  route: TaskInScreenRouteProp;
 }
 
-const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
-  const {projectId, projectText} = route.params;
-  const [updatedText, setUpdatedText] = useState(projectText); // State to hold the updated text
+const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
+  const {taskId, taskText} = route.params;
+  const [updatedText, setUpdatedText] = useState(taskText); // State to hold the updated text
   const [isDatePickerVisible, setDatePickerVisible] = useState(false);
   const [deadline, setDeadline] = useState<Date | null>(null);
   const [description, setDescription] = useState('');
   const [notificationTime, setNotificationTime] = useState('1_hour');
+  const [updatedDescription, setUpdatedDescription] = useState(description); // State to hold the updated description
 
   const handleNotificationTimeChange = (
     value: React.SetStateAction<string>,
@@ -42,33 +44,36 @@ const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
   };
 
   useEffect(() => {
-    const fetchProjectData = async () => {
+    const fetchTaskData = async () => {
       try {
         const currentUser = auth().currentUser;
         if (currentUser) {
           const doc = await firestore()
             .collection('users')
             .doc(currentUser.uid)
-            .collection('projects')
-            .doc(projectId)
+            .collection('tasks')
+            .doc(taskId)
             .get();
-          const projectData = doc.data();
-          if (projectData) {
-            if (projectData.deadline) {
-              const deadlineDate = new Date(projectData.deadline);
+          const taskData = doc.data();
+          if (taskData) {
+            if (taskData.deadline) {
+              const deadlineDate = new Date(taskData.deadline);
               setDeadline(deadlineDate);
             }
-            if (projectData.description) {
-              setDescription(projectData.description);
+            if (taskData.description) {
+              // First, set the description to the state variable.
+              setDescription(taskData.description);
+              // Then, update the updatedDescription state variable.
+              setUpdatedDescription(taskData.description);
             }
           }
         }
       } catch (error) {
-        console.error('Error fetching project data:', error);
+        console.error('Error fetching task data:', error);
       }
     };
-    fetchProjectData();
-  });
+    fetchTaskData();
+  }, [taskId]); // Make sure to add taskId to the dependency array
 
   const showDatePicker = () => {
     setDatePickerVisible(true);
@@ -81,18 +86,25 @@ const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
   const updateFieldInFirestore = async (fieldName: string, value: any) => {
     try {
       const currentUser = auth().currentUser;
+      if (!currentUser) {
+        console.error('User not authenticated.');
+        return; // Exit the function if the user is not authenticated
+      }
       if (currentUser) {
         await firestore()
           .collection('users')
           .doc(currentUser.uid)
-          .collection('projects')
-          .doc(projectId) // Replace projectId with the actual project ID
+          .collection('tasks')
+          .doc(taskId)
           .update({
             [fieldName]: value,
           });
+        console.log(`Successfully updated ${fieldName} in Firestore.`);
+      } else {
+        console.error('User not authenticated.');
       }
     } catch (error) {
-      console.error(`Error updating project ${fieldName}:`, error);
+      console.error(`Error updating ${fieldName} in Firestore:`, error);
     }
   };
 
@@ -105,17 +117,17 @@ const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
 
   // Update deadline field
   const updateDlInFirestore = async (date: Date) => {
-    scheduleNotification(date, notificationTime, projectText);
+    scheduleNotification(date, notificationTime, taskText);
     setDeadline(date);
     await updateFieldInFirestore('deadline', date.toISOString());
     console.log(date);
   };
 
   // Update description field
-  const updateDescriptionInFirestore = async (text: string) => {
-    setDescription(text);
-    await updateFieldInFirestore('description', text);
-    console.log(projectText); // Log the updated text
+  const updateDescriptionInFirestore = async (description: string) => {
+    setUpdatedDescription(description);
+    await updateFieldInFirestore('description', description);
+    console.log(description); // Log the updated text
   };
 
   return (
@@ -125,7 +137,7 @@ const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
           color: 'gray',
           fontSize: 12,
         }}>
-        project name
+        task name
       </Text>
       <TextInput
         style={{
@@ -187,13 +199,13 @@ const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
           fontSize: 16,
           padding: 5,
         }}
-        value={description}
-        onChangeText={text => {
-          updateDescriptionInFirestore(text);
+        value={updatedDescription}
+        onChangeText={newDescription => {
+          updateDescriptionInFirestore(newDescription); // This will wait for a pause before updating Firestore
         }}
         placeholder="Add description"
         multiline={true} // Enable multiline
-        numberOfLines={4} // Adjust the number of lines as needed
+        numberOfLines={4}
       />
       <Button title={'Local Push Notification'} onPress={handleButtonPress} />
       <Picker
@@ -201,7 +213,7 @@ const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
         onValueChange={itemValue => {
           setNotificationTime(itemValue);
           handleNotificationTimeChange(itemValue);
-          scheduleNotification(deadline, itemValue, projectText);
+          scheduleNotification(deadline, itemValue, taskText);
         }}>
         <Picker.Item label="Don't remind" value="dont_remind" />
         <Picker.Item label="1 Hour Before" value="1_hour" />
@@ -210,8 +222,9 @@ const ProjIn: React.FC<ProjInScreenProps> = ({route}) => {
         <Picker.Item label="2 Days Before" value="2_days" />
         <Picker.Item label="1 Week Before" value="1_week" />
       </Picker>
+      <TaskList />
     </View>
   );
 };
 
-export default ProjIn;
+export default TaskIn;
