@@ -230,8 +230,6 @@ const TaskList: React.FC = () => {
       </ScrollView>
       <View
         style={{
-          flexDirection: 'row',
-          alignItems: 'center',
           borderBottomWidth: 1,
           marginTop: 10,
         }}>

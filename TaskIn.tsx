@@ -1,5 +1,11 @@
 import React, {useEffect, useState} from 'react';
-import {View, TextInput, Button, Text} from 'react-native';
+import {
+  KeyboardAvoidingView,
+  View,
+  TextInput,
+  Button,
+  Text,
+} from 'react-native';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
