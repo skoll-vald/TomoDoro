@@ -17,12 +17,13 @@ import TaskList from './TaskList';
 type TaskInScreenRouteProp = Readonly<{
   key: string;
   name: 'TaskIn';
-  path?: string | undefined;
+  path?: string;
 }> &
   Readonly<{
     params: Readonly<{
       taskText: string;
       taskId?: string; // Make taskId optional
+      parentTaskId: string;
     }>;
   }>;
 
@@ -30,8 +31,13 @@ interface TaskInScreenProps {
   route: TaskInScreenRouteProp;
 }
 
+interface TaskListProps {
+  parentTaskId?: string;
+}
+
 const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
-  const {taskId, taskText} = route.params;
+  const {taskId, taskText, parentTaskId} = route.params;
+  console.log(taskId, taskText, parentTaskId);
   const [updatedText, setUpdatedText] = useState(taskText); // State to hold the updated text
   const [isDatePickerVisible, setDatePickerVisible] = useState(false);
   const [deadline, setDeadline] = useState<Date | null>(null);
@@ -228,7 +234,7 @@ const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
         <Picker.Item label="2 Days Before" value="2_days" />
         <Picker.Item label="1 Week Before" value="1_week" />
       </Picker>
-      <TaskList />
+      <TaskList parentTaskId={taskId} taskId={taskId} />
     </View>
   );
 };

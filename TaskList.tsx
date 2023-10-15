@@ -19,22 +19,29 @@ interface Task {
   id: string;
   text: string;
   completed: boolean;
+  parentId?: string;
 }
 
-const TaskList: React.FC = () => {
+const TaskList: React.FC<{parentTaskId?: string; taskId?: string}> = ({
+  parentTaskId,
+  taskId,
+}) => {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState('');
+  const topLevelTasks = tasks.filter(task => !task.parentId);
+  const childTasks = tasks.filter(task => task.parentId === parentTaskId);
 
   // Fetch Tasks from Firestore
-  const fetchTasks = async () => {
+  const fetchTasks = async (parentTaskId: undefined | string) => {
+    // Fetch all tasks initially
     const currentUser = auth().currentUser;
     if (currentUser) {
       const tasksSnapshot = await firestore()
         .collection('users')
         .doc(currentUser.uid)
         .collection('tasks')
-        .orderBy('createdAt', 'desc') // Order by creation time in descending order
+        .orderBy('createdAt', 'desc')
         .get();
 
       const tasksData = tasksSnapshot.docs.map(doc => ({
@@ -42,36 +49,48 @@ const TaskList: React.FC = () => {
         ...doc.data(),
       }));
 
-      setTasks(tasksData as Task[]);
+      // Filter and set only the child tasks of the currently viewed task
+      const childTasks = tasksData.filter(
+        task => task.parentId === parentTaskId,
+      );
+      setTasks(childTasks);
     }
   };
 
   useEffect(() => {
-    fetchTasks();
+    fetchTasks(undefined); // Fetch top-level tasks
   }, []);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      fetchTasks(); // Fetch Tasks when the screen comes into focus
+      fetchTasks(parentTaskId); // Fetch Tasks when the screen comes into focus
     });
     return unsubscribe;
-  }, [navigation]);
+  }, [navigation, parentTaskId]);
 
-  const addTask = async () => {
+  const addTask = async (
+    newTaskText: string,
+    taskId: string,
+    parentId: string,
+  ) => {
     const currentUser = auth().currentUser;
     if (currentUser) {
       try {
         if (newTask.trim() !== '') {
+          const newTaskData = {
+            text: newTask,
+            completed: false,
+            createdAt: firestore.FieldValue.serverTimestamp(),
+            parentId: parentId, // Set the parent ID
+          };
+
           await firestore()
             .collection('users')
             .doc(currentUser.uid)
             .collection('tasks')
-            .add({
-              text: newTask,
-              completed: false,
-              createdAt: firestore.FieldValue.serverTimestamp(), // Set createdAt field
-            });
-          fetchTasks(); // Fetch the updated Tasks for the user
+            .add(newTaskData);
+
+          fetchTasks(taskId);
           setNewTask('');
         }
       } catch (error) {
@@ -94,19 +113,24 @@ const TaskList: React.FC = () => {
             completed: completed,
           });
         console.log(`Task ${taskId} completion updated successfully.`);
-        fetchTasks(); // Fetch the updated Tasks for the user
+        fetchTasks(parentTaskId); // Fetch the updated Tasks for the user
       }
     } catch (error) {
       console.error(`Error updating Task ${taskId}:`, error);
     }
   };
 
-  const navigateToTaskIn = (taskId: string, taskText: string) => {
+  const navigateToTaskIn = (
+    taskId: string,
+    taskText: string,
+    parentTaskId: string,
+  ) => {
     navigation.navigate('TaskIn', {
       taskId: taskId,
       taskText: taskText,
+      parentTaskId: taskId, // Pass the parentTaskId as well
     });
-    console.log(taskId, taskText);
+    console.log(taskId, taskText, parentTaskId);
   };
 
   const deleteTask = async (taskId: string) => {
@@ -131,7 +155,7 @@ const TaskList: React.FC = () => {
                   .collection('tasks')
                   .doc(taskId)
                   .delete();
-                fetchTasks(); // Fetch the updated Tasks for the user
+                fetchTasks(parentTaskId); // Fetch the updated Tasks for the user
               }
             },
             style: 'destructive',
@@ -224,7 +248,7 @@ const TaskList: React.FC = () => {
   return (
     <View style={{flex: 1, padding: 20}}>
       <ScrollView>
-        {tasks.map(task => (
+        {childTasks.map(task => (
           <View key={task.id}>{renderSwipeableRow(task)}</View>
         ))}
       </ScrollView>
@@ -241,7 +265,7 @@ const TaskList: React.FC = () => {
           placeholderTextColor="gray"
           value={newTask}
           onChangeText={setNewTask}
-          onSubmitEditing={addTask}
+          onSubmitEditing={() => addTask(newTask, taskId, parentTaskId)}
         />
       </View>
     </View>
