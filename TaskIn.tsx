@@ -31,14 +31,15 @@ interface TaskInScreenProps {
   route: TaskInScreenRouteProp;
 }
 
-interface TaskListProps {
-  parentTaskId?: string;
-}
-
 const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
   const {taskId, taskText, parentTaskId} = route.params;
   console.log(taskId, taskText, parentTaskId);
-  const [updatedText, setUpdatedText] = useState(taskText); // State to hold the updated text
+  const [taskData, setTaskData] = useState({
+    updatedText: taskText,
+    deadline: null,
+    description: '',
+  });
+  const [updatedText, setUpdatedText] = useState('');
   const [isDatePickerVisible, setDatePickerVisible] = useState(false);
   const [deadline, setDeadline] = useState<Date | null>(null);
   const [description, setDescription] = useState('');
@@ -68,15 +69,18 @@ const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
             .get();
           const taskData = doc.data();
           if (taskData) {
+            console.log('Fetched Task Data:', taskData);
             if (taskData.deadline) {
-              const deadlineDate = new Date(taskData.deadline);
-              setDeadline(deadlineDate);
+              setDeadline(new Date(taskData.deadline));
+            }
+            if (taskData.text) {
+              setTaskData(prevData => ({
+                ...prevData,
+                updatedText: taskData.text,
+              }));
             }
             if (taskData.description) {
-              // First, set the description to the state variable.
-              setDescription(taskData.description);
-              // Then, update the updatedDescription state variable.
-              setUpdatedDescription(taskData.description);
+              setDescription(taskData.description); // Set the description directly
             }
           }
         }
@@ -85,7 +89,55 @@ const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
       }
     };
     fetchTaskData();
-  }, [taskId]); // Make sure to add taskId to the dependency array
+  }, [taskId]);
+
+  useEffect(() => {
+    const fetchTaskData = async () => {
+      try {
+        const currentUser = auth().currentUser;
+        if (currentUser) {
+          const doc = await firestore()
+            .collection('users')
+            .doc(currentUser.uid)
+            .collection('tasks')
+            .doc(taskId)
+            .get();
+          const taskData = doc.data();
+          if (taskData) {
+            console.log('Fetched Task Data:', taskData);
+  
+            // Initialize state with default or empty values
+            let updatedText = '';
+            let taskDescription = '';
+            let taskDeadline = null;
+  
+            if (taskData.text) {
+              setTaskData(prevData => ({
+                ...prevData,
+                updatedText: taskData.text,
+              }));
+            }
+  
+            if (taskData.description) {
+              taskDescription = taskData.description;
+            }
+  
+            if (taskData.deadline) {
+              taskDeadline = new Date(taskData.deadline);
+            }
+  
+            // Update the state
+            setUpdatedText(updatedText);
+            setDescription(taskDescription);
+            setDeadline(taskDeadline);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching task data:', error);
+      }
+    };
+    fetchTaskData();
+  }, [taskId]);
 
   const showDatePicker = () => {
     setDatePickerVisible(true);
@@ -161,7 +213,7 @@ const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
           fontSize: 20,
           padding: 5,
         }}
-        value={updatedText}
+        value={taskData.updatedText}
         onChangeText={text => {
           updateTextInFirestore(text);
         }}
@@ -211,9 +263,9 @@ const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
           fontSize: 16,
           padding: 5,
         }}
-        value={updatedDescription}
+        value={description}
         onChangeText={newDescription => {
-          updateDescriptionInFirestore(newDescription); // This will wait for a pause before updating Firestore
+          updateDescriptionInFirestore(newDescription);
         }}
         placeholder="Add description"
         multiline={true} // Enable multiline
