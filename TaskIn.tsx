@@ -35,16 +35,12 @@ const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
   const {taskId, taskText, parentTaskId} = route.params;
   console.log(taskId, taskText, parentTaskId);
   const [taskData, setTaskData] = useState({
-    updatedText: taskText,
+    text: taskText,
     deadline: null,
     description: '',
   });
-  const [updatedText, setUpdatedText] = useState('');
   const [isDatePickerVisible, setDatePickerVisible] = useState(false);
-  const [deadline, setDeadline] = useState<Date | null>(null);
-  const [description, setDescription] = useState('');
   const [notificationTime, setNotificationTime] = useState('1_hour');
-  const [updatedDescription, setUpdatedDescription] = useState(description); // State to hold the updated description
 
   const handleNotificationTimeChange = (
     value: React.SetStateAction<string>,
@@ -70,66 +66,14 @@ const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
           const taskData = doc.data();
           if (taskData) {
             console.log('Fetched Task Data:', taskData);
-            if (taskData.deadline) {
-              setDeadline(new Date(taskData.deadline));
-            }
-            if (taskData.text) {
-              setTaskData(prevData => ({
-                ...prevData,
-                updatedText: taskData.text,
-              }));
-            }
-            if (taskData.description) {
-              setDescription(taskData.description); // Set the description directly
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching task data:', error);
-      }
-    };
-    fetchTaskData();
-  }, [taskId]);
 
-  useEffect(() => {
-    const fetchTaskData = async () => {
-      try {
-        const currentUser = auth().currentUser;
-        if (currentUser) {
-          const doc = await firestore()
-            .collection('users')
-            .doc(currentUser.uid)
-            .collection('tasks')
-            .doc(taskId)
-            .get();
-          const taskData = doc.data();
-          if (taskData) {
-            console.log('Fetched Task Data:', taskData);
-  
-            // Initialize state with default or empty values
-            let updatedText = '';
-            let taskDescription = '';
-            let taskDeadline = null;
-  
-            if (taskData.text) {
-              setTaskData(prevData => ({
-                ...prevData,
-                updatedText: taskData.text,
-              }));
-            }
-  
-            if (taskData.description) {
-              taskDescription = taskData.description;
-            }
-  
-            if (taskData.deadline) {
-              taskDeadline = new Date(taskData.deadline);
-            }
-  
-            // Update the state
-            setUpdatedText(updatedText);
-            setDescription(taskDescription);
-            setDeadline(taskDeadline);
+            const updatedTaskData = {
+              text: taskData.text || '',
+              description: taskData.description || '',
+              deadline: taskData.deadline ? new Date(taskData.deadline) : null,
+            };
+
+            setTaskData(updatedTaskData);
           }
         }
       } catch (error) {
@@ -174,24 +118,26 @@ const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
 
   // Update text field
   const updateTextInFirestore = async (text: string) => {
-    setUpdatedText(text);
+    setTaskData(prevData => ({...prevData, text}));
     await updateFieldInFirestore('text', text);
-    console.log(text); // Log the updated text
   };
 
   // Update deadline field
   const updateDlInFirestore = async (date: Date) => {
     scheduleNotification(date, notificationTime, taskText);
-    setDeadline(date);
     await updateFieldInFirestore('deadline', date.toISOString());
+    setTaskData(prevData => ({
+      ...prevData,
+      deadline: date,
+    }));
     console.log(date);
   };
 
   // Update description field
   const updateDescriptionInFirestore = async (description: string) => {
-    setUpdatedDescription(description);
+    setTaskData(prevData => ({...prevData, description}));
     await updateFieldInFirestore('description', description);
-    console.log(description); // Log the updated text
+    console.log(description);
   };
 
   return (
@@ -213,7 +159,7 @@ const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
           fontSize: 20,
           padding: 5,
         }}
-        value={taskData.updatedText}
+        value={taskData.text}
         onChangeText={text => {
           updateTextInFirestore(text);
         }}
@@ -234,9 +180,9 @@ const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
         onPress={() => {
           showDatePicker();
         }}>
-        {deadline
-          ? `${new Date(deadline).toLocaleDateString()} ${new Date(
-              deadline,
+        {taskData.deadline
+          ? `${new Date(taskData.deadline).toLocaleDateString()} ${new Date(
+              taskData.deadline,
             ).toLocaleTimeString()}`
           : 'Add deadline'}
       </Text>
@@ -263,7 +209,7 @@ const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
           fontSize: 16,
           padding: 5,
         }}
-        value={description}
+        value={taskData.description}
         onChangeText={newDescription => {
           updateDescriptionInFirestore(newDescription);
         }}
@@ -277,7 +223,7 @@ const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
         onValueChange={itemValue => {
           setNotificationTime(itemValue);
           handleNotificationTimeChange(itemValue);
-          scheduleNotification(deadline, itemValue, taskText);
+          scheduleNotification(taskData.deadline, itemValue, taskText);
         }}>
         <Picker.Item label="Don't remind" value="dont_remind" />
         <Picker.Item label="1 Hour Before" value="1_hour" />
