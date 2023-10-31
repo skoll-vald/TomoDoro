@@ -2,6 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {View, Text, TextInput, ScrollView, Alert} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {NavigationProp} from '@react-navigation/native';
+import {StackActions} from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore'; // Import Firebase Firestore module
 import auth from '@react-native-firebase/auth';
 import {Swipeable, TouchableOpacity} from 'react-native-gesture-handler';
@@ -13,6 +14,7 @@ type RootStackParamList = {
   TaskIn: {
     taskId: string;
     taskText: string;
+    parentTaskId: string;
   };
 };
 
@@ -36,7 +38,7 @@ const TaskList: React.FC<{parentTaskId?: string; taskId?: string}> = ({
     parentTaskId: PropTypes.string,
   };
 
-  const fetchTasks = async (parentTaskId) => {
+  const fetchTasks = async parentTaskId => {
     const currentUser = auth().currentUser;
     if (currentUser) {
       try {
@@ -141,16 +143,20 @@ const TaskList: React.FC<{parentTaskId?: string; taskId?: string}> = ({
     }
   };
 
+  const {dispatch} = navigation;
+
   const navigateToTaskIn = (
     taskId: string,
     taskText: string,
     parentTaskId: string,
   ) => {
-    navigation.navigate('TaskIn', {
-      taskId: taskId,
-      taskText: taskText,
-      parentTaskId: taskId, // Pass the parentTaskId as well
-    });
+    dispatch(
+      StackActions.push('TaskIn', {
+        taskId: taskId,
+        taskText: taskText,
+        parentTaskId: parentTaskId,
+      }),
+    );
     console.log(taskId, taskText, parentTaskId);
   };
 
@@ -251,7 +257,7 @@ const TaskList: React.FC<{parentTaskId?: string; taskId?: string}> = ({
                 paddingLeft: 10,
               }}
               onPress={() =>
-                navigateToTaskIn(task.id, task.text, parentTaskId)
+                navigateToTaskIn(task.id, task.text, parentTaskId || '')
               }>
               <Text
                 style={{
