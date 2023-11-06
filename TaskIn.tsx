@@ -40,7 +40,7 @@ const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
     description: '',
   });
   const [isDatePickerVisible, setDatePickerVisible] = useState(false);
-  const [notificationTime, setNotificationTime] = useState('1_hour');
+  const [notificationTime, setNotificationTime] = useState('dont_remind');
 
   const handleNotificationTimeChange = (
     value: React.SetStateAction<string>,

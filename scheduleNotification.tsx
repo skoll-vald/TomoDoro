@@ -5,6 +5,11 @@ function scheduleNotification(
   notificationTime: string,
   projectText: string,
 ) {
+  if (notificationTime === 'dont_remind') {
+    // Don't schedule a notification if "Don't remind" is chosen.
+    return;
+  }
+
   const timeIntervals: {
     dont_remind: number;
     '1_hour': number;
@@ -21,6 +26,7 @@ function scheduleNotification(
     '2_days': 48,
     '1_week': 168,
   };
+
   if (deadline !== null) {
     // Check if deadline is not null
     console.log(
