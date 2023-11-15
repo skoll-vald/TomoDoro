@@ -36,8 +36,9 @@ const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
   console.log(taskId, taskText, parentTaskId);
   const [taskData, setTaskData] = useState({
     text: taskText,
-    deadline: null,
+    deadline: null as Date | null,
     description: '',
+    createdAtSeconds: '',
   });
   const [isDatePickerVisible, setDatePickerVisible] = useState(false);
   const [notificationTime, setNotificationTime] = useState('dont_remind');
@@ -65,12 +66,19 @@ const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
             .get();
           const taskData = doc.data();
           if (taskData) {
-            console.log('Fetched Task Data:', taskData);
+            console.log(
+              'Fetched Task Data:',
+              taskData,
+              taskData.createdAt.seconds.toString(),
+            );
 
             const updatedTaskData = {
               text: taskData.text || '',
               description: taskData.description || '',
               deadline: taskData.deadline ? new Date(taskData.deadline) : null,
+              createdAtSeconds: taskData.createdAt
+                ? taskData.createdAt.seconds.toString()
+                : '',
             };
 
             setTaskData(updatedTaskData);
@@ -124,7 +132,12 @@ const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
 
   // Update deadline field
   const updateDlInFirestore = async (date: Date) => {
-    scheduleNotification(date, notificationTime, taskText);
+    scheduleNotification(
+      date,
+      notificationTime,
+      taskText,
+      taskData.createdAtSeconds,
+    );
     await updateFieldInFirestore('deadline', date.toISOString());
     setTaskData(prevData => ({
       ...prevData,
@@ -223,7 +236,12 @@ const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
         onValueChange={itemValue => {
           setNotificationTime(itemValue);
           handleNotificationTimeChange(itemValue);
-          scheduleNotification(taskData.deadline, itemValue, taskText);
+          scheduleNotification(
+            taskData.deadline,
+            itemValue,
+            taskText,
+            taskData.createdAtSeconds,
+          );
         }}>
         <Picker.Item label="Don't remind" value="dont_remind" />
         <Picker.Item label="1 Hour Before" value="1_hour" />

@@ -23,6 +23,7 @@ interface Task {
   text: string;
   completed: boolean;
   parentId?: string;
+  createdAt: {seconds: number; nanoseconds: number};
 }
 
 const TaskList: React.FC<{parentTaskId?: string; taskId?: string}> = ({

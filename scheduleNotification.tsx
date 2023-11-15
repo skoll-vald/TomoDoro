@@ -3,13 +3,9 @@ import PushNotification from 'react-native-push-notification';
 function scheduleNotification(
   deadline: Date | null,
   notificationTime: string,
-  projectText: string,
+  taskText: string,
+  notificationId: string,
 ) {
-  if (notificationTime === 'dont_remind') {
-    // Don't schedule a notification if "Don't remind" is chosen.
-    return;
-  }
-
   const timeIntervals: {
     dont_remind: number;
     '1_hour': number;
@@ -27,25 +23,32 @@ function scheduleNotification(
     '1_week': 168,
   };
 
+  if (notificationTime === 'dont_remind') {
+    PushNotification.cancelLocalNotification(`${notificationId}`);
+  }
+
   if (deadline !== null) {
     // Check if deadline is not null
     console.log(
       'scheduleNotification called with:',
       deadline,
       notificationTime,
-      projectText,
+      taskText,
+      notificationId,
     );
     const notificationDate = new Date(deadline);
     const hoursBeforeDeadline = timeIntervals[notificationTime];
 
     if (hoursBeforeDeadline) {
+      PushNotification.cancelLocalNotification(`${notificationId}`);
       notificationDate.setHours(
         notificationDate.getHours() - hoursBeforeDeadline,
       );
 
       PushNotification.localNotificationSchedule({
+        id: `${notificationId}`,
         channelId: 'channel-id',
-        title: `${projectText}`,
+        title: `${taskText}`,
         message: `Deadline is approaching at ${deadline.toLocaleDateString()} in ${deadline.toLocaleTimeString()}!`,
         date: notificationDate,
       });
