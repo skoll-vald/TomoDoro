@@ -49,10 +49,6 @@ const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
     setNotificationTime(value);
   };
 
-  const handleButtonPress = () => {
-    LocalNotification();
-  };
-
   useEffect(() => {
     const fetchTaskData = async () => {
       try {
@@ -230,7 +226,6 @@ const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
         multiline={true} // Enable multiline
         numberOfLines={4}
       />
-      <Button title={'Local Push Notification'} onPress={handleButtonPress} />
       <Picker
         selectedValue={notificationTime}
         onValueChange={itemValue => {
