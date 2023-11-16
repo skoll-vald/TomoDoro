@@ -43,12 +43,6 @@ const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
   const [isDatePickerVisible, setDatePickerVisible] = useState(false);
   const [notificationTime, setNotificationTime] = useState('dont_remind');
 
-  const handleNotificationTimeChange = (
-    value: React.SetStateAction<string>,
-  ) => {
-    setNotificationTime(value);
-  };
-
   useEffect(() => {
     const fetchTaskData = async () => {
       try {
@@ -230,7 +224,6 @@ const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
         selectedValue={notificationTime}
         onValueChange={itemValue => {
           setNotificationTime(itemValue);
-          handleNotificationTimeChange(itemValue);
           scheduleNotification(
             taskData.deadline,
             itemValue,

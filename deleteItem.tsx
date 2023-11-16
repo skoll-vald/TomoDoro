@@ -1,5 +1,6 @@
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
+import {Alert} from 'react-native';
 
 export enum ItemType {
   Project = 'projects',
@@ -8,47 +9,37 @@ export enum ItemType {
 }
 
 // Define a reusable function to delete an item by ID and type
-export const deleteItem = async (
-  itemId: string,
-  itemType: ItemType,
-  parentId?: string,
-) => {
+export const deleteTask = async (taskId: string) => {
   try {
-    const currentUser = auth().currentUser;
-    if (currentUser) {
-      let itemRef;
-
-      if (itemType === ItemType.Project) {
-        itemRef = firestore()
-          .collection('users')
-          .doc(currentUser.uid)
-          .collection(itemType)
-          .doc(itemId);
-      } else if (itemType === ItemType.Task && parentId) {
-        itemRef = firestore()
-          .collection('users')
-          .doc(currentUser.uid)
-          .collection('projects')
-          .doc(parentId)
-          .collection(itemType)
-          .doc(itemId);
-      } else {
-        console.error('Neither Project nor Task condition triggered.');
-        return;
-      }
-
-      // Check if the item is a project and if it has associated tasks
-      if (itemType === ItemType.Project && parentId) {
-        const tasksSnapshot = await itemRef.collection(ItemType.Task).get();
-        tasksSnapshot.forEach(async taskDoc => {
-          await taskDoc.ref.delete();
-        });
-      }
-
-      // Delete the item itself
-      await itemRef.delete();
-    }
+    // Show a confirmation popup before deleting the task
+    Alert.alert(
+      'Think slow, decide fast',
+      'Are you really-really pretty-pretty sure you want to delete this task?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          onPress: async () => {
+            const currentUser = auth().currentUser;
+            if (currentUser) {
+              await firestore()
+                .collection('users')
+                .doc(currentUser.uid)
+                .collection('tasks')
+                .doc(taskId)
+                .delete();
+              fetchTasks(parentTaskId); // Fetch the updated Tasks for the user
+            }
+          },
+          style: 'destructive',
+        },
+      ],
+      {cancelable: true},
+    );
   } catch (error) {
-    console.error(`Error deleting ${itemType}:`, error);
+    console.error('Error deleting Task:', error);
   }
 };

@@ -7,6 +7,9 @@ import firestore from '@react-native-firebase/firestore'; // Import Firebase Fir
 import auth from '@react-native-firebase/auth';
 import {Swipeable, TouchableOpacity} from 'react-native-gesture-handler';
 import PropTypes from 'prop-types';
+import {fetchTasks} from './fetchTasks';
+import {addTask} from './addTask';
+import renderSwipeableRow from './renderSwipeableRow';
 
 type RootStackParamList = {
   Home: undefined;
@@ -14,7 +17,7 @@ type RootStackParamList = {
   TaskIn: {
     taskId: string;
     taskText: string;
-    parentTaskId: string;
+    parentTaskId: string | undefined;
   };
 };
 
@@ -33,95 +36,25 @@ const TaskList: React.FC<{parentTaskId?: string; taskId?: string}> = ({
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState('');
+  const handleAddTask = async (newTaskText: string) => {
+    await addTask(newTaskText, taskId, parentTaskId, setTasks, setNewTask);
+  };
 
   TaskList.propTypes = {
     taskId: PropTypes.string,
     parentTaskId: PropTypes.string,
   };
 
-  const fetchTasks = async parentTaskId => {
-    const currentUser = auth().currentUser;
-    if (currentUser) {
-      try {
-        let query = firestore()
-          .collection('users')
-          .doc(currentUser.uid)
-          .collection('tasks')
-          .orderBy('createdAt', 'desc');
-
-        if (parentTaskId) {
-          // If a parentTaskId is provided, filter by that parent ID
-          query = query.where('parentId', '==', parentTaskId);
-        } else {
-          // If no parentTaskId is provided, filter by 'topLevel' parent ID
-          query = query.where('parentId', '==', 'topLevel');
-        }
-
-        const tasksSnapshot = await query.get();
-
-        const tasksData = tasksSnapshot.docs.map(doc => {
-          const taskData = doc.data() as Task;
-          return {
-            ...taskData,
-            id: doc.id,
-          };
-        });
-
-        setTasks(tasksData);
-      } catch (error) {
-        console.error('Error fetching tasks:', error);
-      }
-    } else {
-      console.error('User not authenticated.');
-    }
-  };
-
   useEffect(() => {
-    fetchTasks(parentTaskId);
+    fetchTasks(parentTaskId, setTasks);
   }, [parentTaskId]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      fetchTasks(parentTaskId); // Fetch Tasks when the screen comes into focus
+      fetchTasks(parentTaskId, setTasks); // Fetch Tasks when the screen comes into focus
     });
     return unsubscribe;
   }, [navigation, parentTaskId]);
-
-  const addTask = async (newTaskText, taskId, parentTaskId) => {
-    const currentUser = auth().currentUser;
-    if (currentUser) {
-      try {
-        if (newTaskText.trim() !== '') {
-          const parentId = parentTaskId || 'topLevel'; // Use 'topLevel' as the parentId for top-level tasks
-
-          const newTaskData = {
-            text: newTaskText,
-            completed: false,
-            createdAt: firestore.FieldValue.serverTimestamp(),
-            parentId: parentId,
-          };
-
-          const docRef = await firestore()
-            .collection('users')
-            .doc(currentUser.uid)
-            .collection('tasks')
-            .add(newTaskData);
-
-          console.log('New task added with ID: ', docRef.id);
-
-          // Fetch and update the tasks
-          fetchTasks(parentTaskId);
-
-          // Clear the input field
-          setNewTask('');
-        }
-      } catch (error) {
-        console.error('Error adding task:', error);
-      }
-    } else {
-      console.error('User not authenticated.');
-    }
-  };
 
   const toggleCompleted = async (taskId: string, completed: boolean) => {
     try {
@@ -137,7 +70,7 @@ const TaskList: React.FC<{parentTaskId?: string; taskId?: string}> = ({
             completed: completed,
           });
         console.log(`Task ${taskId} completion updated successfully.`);
-        fetchTasks(parentTaskId); // Fetch the updated Tasks for the user
+        fetchTasks(parentTaskId, setTasks); // Fetch the updated Tasks for the user
       }
     } catch (error) {
       console.error(`Error updating Task ${taskId}:`, error);
@@ -183,7 +116,7 @@ const TaskList: React.FC<{parentTaskId?: string; taskId?: string}> = ({
                   .collection('tasks')
                   .doc(taskId)
                   .delete();
-                fetchTasks(parentTaskId); // Fetch the updated Tasks for the user
+                fetchTasks(parentTaskId, setTasks); // Fetch the updated Tasks for the user
               }
             },
             style: 'destructive',
@@ -296,7 +229,7 @@ const TaskList: React.FC<{parentTaskId?: string; taskId?: string}> = ({
           placeholderTextColor="gray"
           value={newTask}
           onChangeText={setNewTask}
-          onSubmitEditing={() => addTask(newTask, taskId, parentTaskId)}
+          onSubmitEditing={() => handleAddTask(newTask)}
         />
       </View>
     </View>
