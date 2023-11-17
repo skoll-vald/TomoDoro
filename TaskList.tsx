@@ -10,6 +10,7 @@ import PropTypes from 'prop-types';
 import {fetchTasks} from './fetchTasks';
 import {addTask} from './addTask';
 import renderSwipeableRow from './renderSwipeableRow';
+import {toggleCompleted} from './toggleCompleted';
 
 type RootStackParamList = {
   Home: undefined;
@@ -34,6 +35,7 @@ const TaskList: React.FC<{parentTaskId?: string; taskId?: string}> = ({
   taskId,
 }) => {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const {dispatch} = navigation;
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState('');
   const handleAddTask = async (newTaskText: string) => {
@@ -55,29 +57,6 @@ const TaskList: React.FC<{parentTaskId?: string; taskId?: string}> = ({
     });
     return unsubscribe;
   }, [navigation, parentTaskId]);
-
-  const toggleCompleted = async (taskId: string, completed: boolean) => {
-    try {
-      const currentUser = auth().currentUser;
-      if (currentUser) {
-        console.log(`Toggling completion for task ${taskId} to ${completed}`);
-        await firestore()
-          .collection('users')
-          .doc(currentUser.uid)
-          .collection('tasks')
-          .doc(taskId)
-          .update({
-            completed: completed,
-          });
-        console.log(`Task ${taskId} completion updated successfully.`);
-        fetchTasks(parentTaskId, setTasks); // Fetch the updated Tasks for the user
-      }
-    } catch (error) {
-      console.error(`Error updating Task ${taskId}:`, error);
-    }
-  };
-
-  const {dispatch} = navigation;
 
   const navigateToTaskIn = (
     taskId: string,
@@ -177,7 +156,14 @@ const TaskList: React.FC<{parentTaskId?: string; taskId?: string}> = ({
               borderBlockColor: 'lightgray',
             }}>
             <TouchableOpacity
-              onPress={() => toggleCompleted(task.id, !task.completed)}>
+              onPress={() =>
+                toggleCompleted(
+                  task.id,
+                  !task.completed,
+                  parentTaskId,
+                  setTasks,
+                )
+              }>
               <Text
                 style={{
                   color: task.completed ? 'green' : 'gray',
