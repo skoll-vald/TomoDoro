@@ -158,9 +158,6 @@ const TaskList: React.FC<{parentTaskId: string; taskId: string}> = ({
           marginTop: 10,
         }}>
         <TextInput
-          style={{
-            flex: 1,
-          }}
           placeholder="Add a task"
           placeholderTextColor="gray"
           value={newTask}
