@@ -21,6 +21,7 @@ export const addTask = async (
           completed: false,
           createdAt: firestore.FieldValue.serverTimestamp(),
           parentId: parentId,
+          notificationTime: 'dont_remind',
         };
 
         const docRef = await firestore()

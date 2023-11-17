@@ -1,15 +1,8 @@
 import React, {useEffect, useState} from 'react';
-import {
-  KeyboardAvoidingView,
-  View,
-  TextInput,
-  Button,
-  Text,
-} from 'react-native';
+import {View, TextInput, Text} from 'react-native';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
-import {LocalNotification} from './android/app/src/services/LocalPushController';
 import {Picker} from '@react-native-picker/picker';
 import scheduleNotification from './scheduleNotification';
 import TaskList from './TaskList';
@@ -72,6 +65,7 @@ const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
             };
 
             setTaskData(updatedTaskData);
+            setNotificationTime(taskData.notificationTime || 'dont_remind');
           }
         }
       } catch (error) {
@@ -112,6 +106,12 @@ const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
     } catch (error) {
       console.error(`Error updating ${fieldName} in Firestore:`, error);
     }
+  };
+
+  // Update picker value
+  const updatePickerValueInFirestore = async (value: string) => {
+    setTaskData(prevData => ({...prevData, value}));
+    await updateFieldInFirestore('notificationTime', value);
   };
 
   // Update text field
@@ -230,6 +230,7 @@ const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
             taskText,
             taskData.createdAtSeconds,
           );
+          updatePickerValueInFirestore(itemValue);
         }}>
         <Picker.Item label="Don't remind" value="dont_remind" />
         <Picker.Item label="1 Hour Before" value="1_hour" />
@@ -238,7 +239,7 @@ const TaskIn: React.FC<TaskInScreenProps> = ({route}) => {
         <Picker.Item label="2 Days Before" value="2_days" />
         <Picker.Item label="1 Week Before" value="1_week" />
       </Picker>
-      <TaskList parentTaskId={taskId} taskId={taskId} />
+      <TaskList parentTaskId={taskId!} taskId={taskId!} />
     </View>
   );
 };
