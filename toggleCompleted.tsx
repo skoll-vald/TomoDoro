@@ -1,13 +1,13 @@
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import {fetchTasks} from './fetchTasks';
-import Task from './TaskList';
+import {Task} from './Task';
 
 export const toggleCompleted = async (
   taskId: string,
   completed: boolean,
   parentTaskId: string,
-  setTasks: React.Dispatch<React.SetStateAction<(typeof Task)[]>>, // Assuming Task is defined in the same scope
+  setTasks: React.Dispatch<React.SetStateAction<Task[]>>, // Assuming Task is defined in the same scope
 ) => {
   try {
     const currentUser = auth().currentUser;

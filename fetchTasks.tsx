@@ -1,10 +1,10 @@
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
-import Task from './TaskList';
+import {Task} from './Task';
 
 export const fetchTasks = async (
   parentTaskId: string,
-  setTasks: (tasks: (typeof Task)[]) => void,
+  setTasks: (tasks: Task[]) => void,
 ) => {
   const currentUser = auth().currentUser;
   if (currentUser) {
@@ -26,7 +26,7 @@ export const fetchTasks = async (
       const tasksSnapshot = await query.get();
 
       const tasksData = tasksSnapshot.docs.map(doc => {
-        const taskData = doc.data() as typeof Task;
+        const taskData = doc.data() as Task;
         return {
           ...taskData,
           id: doc.id,

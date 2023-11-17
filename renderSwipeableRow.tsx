@@ -1,9 +1,10 @@
 import React from 'react';
 import {Text, TouchableOpacity, View} from 'react-native';
 import {Swipeable} from 'react-native-gesture-handler';
-import Task from './TaskList';
+import {Task} from './Task';
+import {deleteTask} from './deleteTask';
 
-export const renderSwipeableRow = (task: typeof Task) => {
+export const renderSwipeableRow = (task: Task) => {
   const renderRightActions = () => (
     <TouchableOpacity
       style={{
@@ -13,7 +14,7 @@ export const renderSwipeableRow = (task: typeof Task) => {
         height: '100%',
         padding: 10,
       }}
-      onPress={() => deleteTask(task.id)}>
+      onPress={() => deleteTask(task.id, parentTaskId, setTasks)}>
       <Text style={{color: 'white'}}>Delete</Text>
     </TouchableOpacity>
   );

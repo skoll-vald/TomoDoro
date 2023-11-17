@@ -1,16 +1,14 @@
 import React, {useEffect, useState} from 'react';
-import {View, Text, TextInput, ScrollView, Alert} from 'react-native';
+import {View, Text, TextInput, ScrollView} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {NavigationProp} from '@react-navigation/native';
 import {StackActions} from '@react-navigation/native';
-import firestore from '@react-native-firebase/firestore'; // Import Firebase Firestore module
-import auth from '@react-native-firebase/auth';
 import {Swipeable, TouchableOpacity} from 'react-native-gesture-handler';
-import PropTypes from 'prop-types';
 import {fetchTasks} from './fetchTasks';
 import {addTask} from './addTask';
-import renderSwipeableRow from './renderSwipeableRow';
 import {toggleCompleted} from './toggleCompleted';
+import {deleteTask} from './deleteTask';
+import {Task} from './Task';
 
 type RootStackParamList = {
   Home: undefined;
@@ -18,19 +16,11 @@ type RootStackParamList = {
   TaskIn: {
     taskId: string;
     taskText: string;
-    parentTaskId: string | undefined;
+    parentTaskId: string;
   };
 };
 
-interface Task {
-  id: string;
-  text: string;
-  completed: boolean;
-  parentId?: string;
-  createdAt: {seconds: number; nanoseconds: number};
-}
-
-const TaskList: React.FC<{parentTaskId?: string; taskId?: string}> = ({
+const TaskList: React.FC<{parentTaskId: string; taskId: string}> = ({
   parentTaskId,
   taskId,
 }) => {
@@ -40,11 +30,6 @@ const TaskList: React.FC<{parentTaskId?: string; taskId?: string}> = ({
   const [newTask, setNewTask] = useState('');
   const handleAddTask = async (newTaskText: string) => {
     await addTask(newTaskText, taskId, parentTaskId, setTasks, setNewTask);
-  };
-
-  TaskList.propTypes = {
-    taskId: PropTypes.string,
-    parentTaskId: PropTypes.string,
   };
 
   useEffect(() => {
@@ -73,41 +58,6 @@ const TaskList: React.FC<{parentTaskId?: string; taskId?: string}> = ({
     console.log(taskId, taskText, parentTaskId);
   };
 
-  const deleteTask = async (taskId: string) => {
-    try {
-      // Show a confirmation popup before deleting the task
-      Alert.alert(
-        'Think slow, decide fast',
-        'Are you really-really pretty-pretty sure you want to delete this task?',
-        [
-          {
-            text: 'Cancel',
-            style: 'cancel',
-          },
-          {
-            text: 'Delete',
-            onPress: async () => {
-              const currentUser = auth().currentUser;
-              if (currentUser) {
-                await firestore()
-                  .collection('users')
-                  .doc(currentUser.uid)
-                  .collection('tasks')
-                  .doc(taskId)
-                  .delete();
-                fetchTasks(parentTaskId, setTasks); // Fetch the updated Tasks for the user
-              }
-            },
-            style: 'destructive',
-          },
-        ],
-        {cancelable: true},
-      );
-    } catch (error) {
-      console.error('Error deleting Task:', error);
-    }
-  };
-
   const renderSwipeableRow = (task: Task) => {
     const renderRightActions = () => (
       <TouchableOpacity
@@ -118,7 +68,7 @@ const TaskList: React.FC<{parentTaskId?: string; taskId?: string}> = ({
           height: '100%',
           padding: 10,
         }}
-        onPress={() => deleteTask(task.id)}>
+        onPress={() => deleteTask(task.id, parentTaskId, setTasks)}>
         <Text style={{color: 'white'}}>Delete</Text>
       </TouchableOpacity>
     );
@@ -132,7 +82,7 @@ const TaskList: React.FC<{parentTaskId?: string; taskId?: string}> = ({
           height: '100%',
           padding: 10,
         }}
-        onPress={() => deleteTask(task.id)}>
+        onPress={() => deleteTask(task.id, parentTaskId, setTasks)}>
         <Text style={{color: 'white'}}>Delete</Text>
       </TouchableOpacity>
     );

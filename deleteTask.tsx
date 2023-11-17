@@ -1,15 +1,14 @@
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import {Alert} from 'react-native';
+import {fetchTasks} from './fetchTasks';
+import {Task} from './Task';
 
-export enum ItemType {
-  Project = 'projects',
-  Task = 'tasks',
-  Subtask = 'subtasks',
-}
-
-// Define a reusable function to delete an item by ID and type
-export const deleteTask = async (taskId: string) => {
+export const deleteTask = async (
+  taskId: string,
+  parentTaskId: string,
+  setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
+) => {
   try {
     // Show a confirmation popup before deleting the task
     Alert.alert(
@@ -31,7 +30,7 @@ export const deleteTask = async (taskId: string) => {
                 .collection('tasks')
                 .doc(taskId)
                 .delete();
-              fetchTasks(parentTaskId); // Fetch the updated Tasks for the user
+              fetchTasks(parentTaskId, setTasks); // Fetch the updated Tasks for the user
             }
           },
           style: 'destructive',

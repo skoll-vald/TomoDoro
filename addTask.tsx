@@ -1,13 +1,13 @@
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import {fetchTasks} from './fetchTasks';
-import Task from './TaskList';
+import {Task} from './Task';
 
 export const addTask = async (
   newTaskText: string,
   taskId: any,
   parentTaskId: string,
-  setTasks: React.Dispatch<React.SetStateAction<(typeof Task)[]>>, // Assuming Task[] is the type of your tasks state
+  setTasks: React.Dispatch<React.SetStateAction<Task[]>>, // Assuming Task[] is the type of your tasks state
   setNewTask: React.Dispatch<React.SetStateAction<string>>,
 ) => {
   const currentUser = auth().currentUser;
