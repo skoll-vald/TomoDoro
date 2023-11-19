@@ -51,9 +51,40 @@ function scheduleNotification(
         title: `${taskText}`,
         message: `Deadline is approaching at ${deadline.toLocaleDateString()} in ${deadline.toLocaleTimeString()}!`,
         date: notificationDate,
+        actions: ['Отложить на час'],
+        invokeApp: false,
       });
     }
   }
 }
+
+PushNotification.configure({
+  // other configuration settings...
+
+  onAction: function (notification) {
+    console.log('ACTION:', notification.action);
+    console.log('NOTIFICATION:', notification);
+
+    if (notification.action === 'Отложить на час') {
+      // Use the existing notification ID
+      const existingNotificationId = notification.id;
+
+      // Calculate a new date for rescheduling (e.g., an hour later from now)
+      const rescheduledDate = new Date();
+      rescheduledDate.setHours(rescheduledDate.getHours() + 1);
+
+      // Reschedule the notification
+      PushNotification.localNotificationSchedule({
+        id: existingNotificationId,
+        channelId: 'channel-id',
+        date: rescheduledDate,
+        actions: ['Отложить на час'],
+        invokeApp: false,
+        message: `${notification.message}`,
+      });
+      console.log(`Notification delayed for an hour ${rescheduledDate}`);
+    }
+  },
+});
 
 export default scheduleNotification;
